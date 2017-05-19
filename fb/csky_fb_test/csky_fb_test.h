@@ -20,7 +20,9 @@
 #define CSKY_FBIO_BASE	0x30
 #define CSKY_FBIO_SET_PIXEL_FMT	_IOW('F', CSKY_FBIO_BASE+0, \
 					enum csky_fb_pixel_format)
-#define CSKY_FBIO_SET_PBASE_YUV	_IOW('F', CSKY_FBIO_BASE+1, \
+#define CSKY_FBIO_GET_PIXEL_FMT	_IOW('F', CSKY_FBIO_BASE+1, \
+					enum csky_fb_pixel_format)
+#define CSKY_FBIO_SET_PBASE_YUV	_IOW('F', CSKY_FBIO_BASE+2, \
 					struct csky_fb_lcd_pbase_yuv)
 
 /*
@@ -54,6 +56,7 @@ struct csky_fb_test_info {
 #define MENU_EXIT		"Q"
 #define MENU_LCDC_ENABLE	"L"
 #define MENU_SET_PIXEL_FORMAT	"F"
+#define MENU_GET_PIXEL_FORMAT	"G"
 #define MENU_WAIT_FOR_VSYNC	"V"
 #define MENU_PAN_DISPLAY	"P"
 #define MENU_DISPLAY_YUV_IMG	"Y"

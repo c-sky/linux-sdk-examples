@@ -38,6 +38,8 @@ static struct csky_fb_test_info info;
 #endif
 static char action[MAX_PATH];
 
+static int frame_num = 1;
+
 /*
  * reads a line from stdin and stores the first word into the buffer @str
  */
@@ -66,6 +68,7 @@ void show_menu(void)
 	printf("%s - exit\n", MENU_EXIT);
 	printf("%s - enable/disable LCDC\n", MENU_LCDC_ENABLE);
 	printf("%s - set pixel format\n", MENU_SET_PIXEL_FORMAT);
+	printf("%s - get pixel format\n", MENU_GET_PIXEL_FORMAT);
 	printf("%s - wait for VSYNC\n", MENU_WAIT_FOR_VSYNC);
 	printf("%s - pan display(RGB only)\n", MENU_PAN_DISPLAY);
 	printf("%s - display YUV image(YUV420 only)\n", MENU_DISPLAY_YUV_IMG);
@@ -147,6 +150,33 @@ int test_set_pixel_format(void)
 	}
 
 	return 0;
+}
+
+int test_get_pixel_format(void)
+{
+	enum csky_fb_pixel_format pixel_fmt;
+
+	ioctl(info.fd, CSKY_FBIO_GET_PIXEL_FMT, &pixel_fmt);
+
+	printf("pixel format: ");
+	switch (pixel_fmt) {
+	case CSKY_FB_PIXEL_FMT_RGB:
+		printf("RGB\n");
+		break;
+	case CSKY_FB_PIXEL_FMT_YUV444:
+		printf("YUV444\n");
+		break;
+	case CSKY_FB_PIXEL_FMT_YUV422:
+		printf("YUV422\n");
+		break;
+	case CSKY_FB_PIXEL_FMT_YUV420:
+		printf("YUV420\n");
+		break;
+	default:
+		printf("\n");
+	}
+
+	return pixel_fmt;
 }
 
 int test_wait_for_vsync(void)
@@ -231,12 +261,14 @@ int test_pan_display(void)
 			info.var.yoffset = 0;
 			ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 			ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
+			frame_num = 1;
 		}
 		else if (strcasecmp(choice, "2") == 0) {
 			printf("frame2\n");
 			info.var.yoffset = info.var.yres;
 			ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 			ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
+			frame_num = 2;
 		}
 		else
 			printf("invalid input\n");
@@ -247,7 +279,7 @@ int test_pan_display(void)
 
 int test_display_yuv_image(void)
 {
-	enum csky_fb_pixel_format pixel_fmt;
+	enum csky_fb_pixel_format pixel_fmt_new;
 	unsigned long base = info.fix.smem_start;
 	struct csky_fb_lcd_pbase_yuv base_yuv;
 	int tmp;
@@ -262,8 +294,8 @@ int test_display_yuv_image(void)
 	if (size > 0)
 	{
 		/* set pixel format to yuv420 */
-		pixel_fmt = CSKY_LCDCON_DFS_YUV420;
-		ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt);
+		pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
+		ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new);
 
 		/* set y/u/v base address */
 		base_yuv.y = base;
@@ -276,13 +308,14 @@ int test_display_yuv_image(void)
 
 	/* init lcdc */
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
+
 	return 0;
 }
 
 int test_display_rectangle_32bpp(void)
 {
 	int tmp;
-	enum csky_fb_pixel_format pixel_fmt = CSKY_LCDCON_DFS_RGB;
+	enum csky_fb_pixel_format pixel_fmt_new = CSKY_LCDCON_DFS_RGB;
 	unsigned int width, height, pixel_len;
 	unsigned int i, j;
 
@@ -290,7 +323,7 @@ int test_display_rectangle_32bpp(void)
 	ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
 	/* set pixel format */
-	ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt);
+	ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new);
 
 	/* draw rectangle */
 
@@ -312,10 +345,12 @@ int test_display_rectangle_32bpp(void)
 	for (j=0; j<height; j++)
 		*(unsigned int *)(info.ptr + (j*width+i)*pixel_len) = COLOR_RED;
 
-	/* pan display to frame #1 */
-	info.var.yoffset = 0;
-	ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-	ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
+	if (frame_num == 2) {
+		/* pan display to frame #1 */
+		info.var.yoffset = 0;
+		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
+		ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
+	}
 
 	/* init lcdc */
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
@@ -363,6 +398,8 @@ int do_fb_test(char *choice)
 		ret = test_lcdc_enable();
 	else if (strcasecmp(choice, MENU_SET_PIXEL_FORMAT) == 0)
 		ret = test_set_pixel_format();
+	else if (strcasecmp(choice, MENU_GET_PIXEL_FORMAT) == 0)
+		ret = test_get_pixel_format();
 	else if (strcasecmp(choice, MENU_WAIT_FOR_VSYNC) == 0)
 		ret = test_wait_for_vsync();
 	else if (strcasecmp(choice, MENU_PAN_DISPLAY) == 0)
