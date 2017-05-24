@@ -290,7 +290,7 @@ int test_display_yuv_image(void)
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
 
 	/* read image data into framebuffer */
-	size = load_file(info.ptr, "/yuvtest.bin");
+	size = load_file(info.ptr, "./yuvtest420.img");
 	if (size > 0)
 	{
 		/* set pixel format to yuv420 */
