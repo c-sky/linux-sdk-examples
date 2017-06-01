@@ -34,6 +34,7 @@
 #include "fileops.h"
 #include "mfc.h"
 #include "parser.h"
+#include "v4l2_common.h"
 
 char g_scan_char;
 #define DEBUG_SCAN_STEP //dbg("press any key to continue:");scanf("%c", &g_scan_char);
@@ -145,6 +146,8 @@ int dequeue_capture(struct instance *i, int *n, unsigned int *paddr, int *finish
 		dbg("dequeue_capture failed");
 		return -1;
 	}
+	//v4l_print_buffer(&qbuf);
+
 	*paddr = *((unsigned int*)qbuf.timecode.userbits);
 	dbg("qbuf.bytesused=%d, paddr=0x%08x", qbuf.bytesused, *paddr);
 	*finished = qbuf.bytesused == 0;
@@ -198,7 +201,8 @@ void *parser_thread_func(void *args)
 
 			i->mfc.out_buf_flag[n] = 1;
 			i->in.offs += used;
-		} else {
+		}
+		else {
 			DEBUG_SCAN_STEP;
 			ret = dequeue_output(i, &n);
 			DEBUG_SCAN_STEP;

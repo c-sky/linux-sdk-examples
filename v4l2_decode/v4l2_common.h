@@ -61,5 +61,6 @@ enum vb2_memory {
 void v4l_print_querycap(struct v4l2_capability *arg);
 void v4l_print_fmtdesc(const void *arg);
 void v4l_print_format(const void *arg);
+void v4l_print_buffer(const void *arg);
 
 #endif
