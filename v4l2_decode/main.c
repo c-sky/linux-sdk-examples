@@ -176,20 +176,14 @@ void *parser_thread_func(void *args)
 				i->mfc.out_buf_addr[n], i->mfc.out_buf_size,
 				&used, &fs, 0);
 
-
 			if (ret == 0 && i->in.offs == i->in.size) {
 				dbg("Parser has extracted all frames");
 				i->parser.finished = 1;
 				fs = 0;
-			}
-
-			DEBUG_SCAN_STEP;
-
-			if (fs <= 0) {
-				dbg("No more frame");
 				break;
 			}
 
+			DEBUG_SCAN_STEP;
 			dbg("Extracted frame of size %d: %02X %02X %02X %02X %02X %02X %02X %02X ...",
 				fs,
 				i->mfc.out_buf_addr[n][0], i->mfc.out_buf_addr[n][1],

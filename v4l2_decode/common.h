@@ -40,7 +40,7 @@
 #define ADD_DETAILS
 /* When DEBUG is defined debug messages are printed on the screen.
  * Otherwise only error messages are displayed. */
-#define DEBUG
+//#define DEBUG
 
 #ifdef ADD_DETAILS
 #define err(msg, ...) \
