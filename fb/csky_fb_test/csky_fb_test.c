@@ -72,6 +72,7 @@ void show_menu(void)
 	printf("%s - wait for VSYNC\n", MENU_WAIT_FOR_VSYNC);
 	printf("%s - pan display(RGB only)\n", MENU_PAN_DISPLAY);
 	printf("%s - display YUV image(YUV420 only)\n", MENU_DISPLAY_YUV_IMG);
+	printf("%s - display YUV image(2 frame)\n", MENU_DISPLAY_YUV_IMG2);
 	printf("%s - display rectangle(RGB only)\n", MENU_DISPLAY_RECT_IMG);
 	printf("%s - Stress Test\n", MENU_STRESS_TEST);
 	printf("-------------------------------\n");
@@ -312,6 +313,65 @@ int test_display_yuv_image(void)
 	return 0;
 }
 
+int test_display_yuv_image2(void)
+{
+	enum csky_fb_pixel_format pixel_fmt_new;
+	unsigned long base = info.fix.smem_start;
+	struct csky_fb_lcd_pbase_yuv base_yuv;
+	int tmp;
+	int size;
+	int i;
+
+	/* reset lcdc */
+	ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
+	ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
+
+	/* read image data into framebuffer */
+	size = load_file(info.ptr, "./yuvtest420.img");
+	if (size > 0)
+	{
+		/* set pixel format to yuv420 */
+		pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
+		ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new);
+
+		/* set y/u/v base address */
+		base_yuv.y = base;
+		base_yuv.u = base_yuv.y +
+			     info.var.xres * info.var.yres;
+		base_yuv.v = base_yuv.u +
+			     info.var.xres * info.var.yres / 4;
+		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
+	}
+
+	/* init lcdc */
+	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
+
+	load_file(info.ptr + size, "./yuvtest420_2.img");
+
+	for (i=0; i<10; i++) {
+		/* frame 1 */
+		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
+		base_yuv.y = base;
+		base_yuv.u = base_yuv.y +
+			     info.var.xres * info.var.yres;
+		base_yuv.v = base_yuv.u +
+			     info.var.xres * info.var.yres / 4;
+		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
+		sleep(1);
+		/* frame 2 */
+		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
+		base_yuv.y = base + size;
+		base_yuv.u = base_yuv.y +
+			     info.var.xres * info.var.yres;
+		base_yuv.v = base_yuv.u +
+			     info.var.xres * info.var.yres / 4;
+		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
+		sleep(1);
+	}
+
+	return 0;
+}
+
 int test_display_rectangle_32bpp(void)
 {
 	int tmp;
@@ -406,6 +466,8 @@ int do_fb_test(char *choice)
 		ret = test_pan_display();
 	else if (strcasecmp(choice, MENU_DISPLAY_YUV_IMG) == 0)
 		ret = test_display_yuv_image();
+	else if (strcasecmp(choice, MENU_DISPLAY_YUV_IMG2) == 0)
+		ret = test_display_yuv_image2();
 	else if (strcasecmp(choice, MENU_DISPLAY_RECT_IMG) == 0)
 		ret = test_display_rectangle_32bpp();
 	else if (strcasecmp(choice, MENU_STRESS_TEST) == 0)
