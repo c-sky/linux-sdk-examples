@@ -33,7 +33,7 @@ AR2 = ${TCPATH}ranlib make -j4
 #-I$(TARGETROOT)/usr/include/linux
 
 SOURCES = main.c fileops.c args.c parser.c mfc.c # queue.c
-SOURCES += v4l2_common.c csky_fb_test.c
+SOURCES += v4l2_common.c fb.c
 
 OBJECTS := $(SOURCES:.c=.o)
 EXEC = v4l2_decode

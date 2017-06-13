@@ -29,7 +29,7 @@
 #include <linux/fb.h>
 
 #include "common.h"
-#include "csky_fb_test.h"
+#include "fb.h"
 
 int fb_open(struct instance *i, char *name)
 {

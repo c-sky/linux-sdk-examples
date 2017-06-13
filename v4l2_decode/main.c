@@ -30,7 +30,7 @@
 
 #include "args.h"
 #include "common.h"
-#include "csky_fb_test.h"
+#include "fb.h"
 #include "fileops.h"
 #include "mfc.h"
 #include "parser.h"
