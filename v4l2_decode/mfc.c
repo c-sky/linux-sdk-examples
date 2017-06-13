@@ -186,9 +186,9 @@ int mfc_dec_queue_buf(struct instance *i, int n, int l1, int l2, int type,
 		return -1;
 	}
 
-	dbg("Queued buffer on %s queue with index %d, bytesused=%d/length=%d",
-		dbg_type[type==V4L2_BUF_TYPE_VIDEO_CAPTURE],
-		n, qbuf.bytesused, qbuf.length);
+//	dbg("Queued buffer on %s queue with index %d, bytesused=%d/length=%d",
+//		dbg_type[type==V4L2_BUF_TYPE_VIDEO_CAPTURE],
+//		n, qbuf.bytesused, qbuf.length);
 
 	return 0;
 }
@@ -226,8 +226,8 @@ int mfc_dec_dequeue_buf(struct instance *i, struct v4l2_buffer *qbuf)
 		return -1;
 	}
 
-	dbg("Dequeued buffer with index %d on %s queue", qbuf->index,
-		dbg_type[qbuf->type==V4L2_BUF_TYPE_VIDEO_CAPTURE]);
+	//dbg("Dequeued buffer with index %d on %s queue", qbuf->index,
+	//	dbg_type[qbuf->type==V4L2_BUF_TYPE_VIDEO_CAPTURE]);
 
 	return 0;
 }
@@ -363,8 +363,10 @@ int mfc_dec_setup_capture(struct instance *i, int extra_buf)
 			err("Failed to MMAP MFC CAPTURE buffer");
 			return -1;
 		}
+		//dbg("press any key to continue:");scanf("%c", &g_scan_char);
 	}
 	DEBUG_SCAN_STEP;
+//	dbg("press any key to continue:");scanf("%c", &g_scan_char);
 
 	dbg("Succesfully mmapped %d MFC CAPTURE buffers", n);
 
