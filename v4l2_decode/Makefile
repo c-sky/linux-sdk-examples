@@ -16,23 +16,10 @@
 # limitations under the License.
 #
 
-# Toolchain path
-#TCPATH = arm-linux-
-#TCPATH =
-#KERNELHEADERS = /work/kernel/linux-3.9.7/include
 TCPATH = csky-abiv2-linux-
 CC = ${TCPATH}gcc
-AR = "${TCPATH}ar rc"
-AR2 = ${TCPATH}ranlib make -j4
 
-
-#INCLUDES = -I$(KERNELHEADERS)
-
-#INCLUDES = -I$(KERNELHEADERS)/include
-
-#-I$(TARGETROOT)/usr/include/linux
-
-SOURCES = main.c fileops.c args.c parser.c mfc.c # queue.c
+SOURCES = main.c fileops.c args.c parser.c mfc.c
 SOURCES += v4l2_common.c fb.c
 
 OBJECTS := $(SOURCES:.c=.o)
