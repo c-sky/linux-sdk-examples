@@ -30,7 +30,6 @@
 
 #include "common.h"
 #include "csky_fb_test.h"
-static int s_fb_is_on = 0;
 
 int fb_open(struct instance *i, char *name)
 {
@@ -62,7 +61,6 @@ int fb_open(struct instance *i, char *name)
 	i->fb.full_size		= i->fb.stride * i->fb.virt_height;
 	i->fb.size		= i->fb.stride * fbinfo.yres;
 
-	fb_wait_for_vsync(i);
 	if (ioctl(i->fb.fd, FBIOBLANK, FB_BLANK_POWERDOWN) < 0) {
 		dbg("set fb power down failed");
 		return -1;
@@ -76,19 +74,18 @@ int fb_open(struct instance *i, char *name)
 		return -1;
 	}
 	dbg("set fb fmt to be CSKY_LCDCON_DFS_YUV420 OK");
-
-	//fb_power_on(i);
+	fb_power_on(i);
 
 	return 0;
 }
 
+static int s_fb_is_on = 0;
 int fb_power_on(struct instance *i)
 {
 	if (s_fb_is_on) {
 		return 0;
 	}
 
-	fb_wait_for_vsync(i);
 	if (ioctl(i->fb.fd, FBIOBLANK, FB_BLANK_UNBLANK) < 0) {
 		dbg("set fb power on failed");
 		return -1;
