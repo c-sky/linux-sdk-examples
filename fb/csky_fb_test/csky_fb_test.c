@@ -260,14 +260,14 @@ int test_pan_display(void)
 		else if (strcasecmp(choice, "1") == 0) {
 			printf("frame1\n");
 			info.var.yoffset = 0;
-			ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
+			//ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 			ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
 			frame_num = 1;
 		}
 		else if (strcasecmp(choice, "2") == 0) {
 			printf("frame2\n");
 			info.var.yoffset = info.var.yres;
-			ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
+			//ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 			ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
 			frame_num = 2;
 		}
@@ -348,25 +348,24 @@ int test_display_yuv_image2(void)
 
 	load_file(info.ptr + size, "./yuvtest420_2.img");
 
-	for (i=0; i<10; i++) {
+	for (i=0; i<30; i++) {
 		/* frame 1 */
-		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 		base_yuv.y = base;
 		base_yuv.u = base_yuv.y +
 			     info.var.xres * info.var.yres;
 		base_yuv.v = base_yuv.u +
 			     info.var.xres * info.var.yres / 4;
 		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
-		sleep(1);
-		/* frame 2 */
 		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
+
+		/* frame 2 */
 		base_yuv.y = base + size;
 		base_yuv.u = base_yuv.y +
 			     info.var.xres * info.var.yres;
 		base_yuv.v = base_yuv.u +
 			     info.var.xres * info.var.yres / 4;
 		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
-		sleep(1);
+		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 	}
 
 	return 0;
