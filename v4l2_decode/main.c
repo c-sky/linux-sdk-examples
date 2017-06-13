@@ -27,6 +27,7 @@
 #include <semaphore.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <signal.h>
 
 #include "args.h"
 #include "common.h"
@@ -100,6 +101,10 @@ int dequeue_capture(struct instance *i, int *n, unsigned int *disp_paddr, int *f
 	return 0;
 }
 
+static pthread_t mfc_thread;
+static pthread_t parser_thread;
+static pthread_t daemon_thread;
+
 /* This threads is responsible for parsing the stream and
  * feeding MFC with consecutive frames to decode */
 static int s_output_stream_on = 0;
@@ -166,7 +171,7 @@ void *parser_thread_func(void *args)
 		}
 	}
 
-	dbg("Parser thread finished");
+	printf("Parser thread finished\n");
 	return 0;
 }
 
@@ -185,6 +190,9 @@ void *mfc_thread_func(void *args)
 	int frame_count = 0;
 #endif
 	dbg("mfc_thread_func+");
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL); //允许退出线程
+ 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL); //设置立即取消
+
 
 	while (!i->error && !i->finish) {
 		/* Can dequeue a processed buffer */
@@ -194,6 +202,8 @@ void *mfc_thread_func(void *args)
 			i->error = 1;
 			break;
 		}
+
+		i->decoded_cnt++;
 		if (finished) {
 			dbg("Finished extracting last frames");
 			i->finish = 1;
@@ -249,15 +259,42 @@ void *mfc_thread_func(void *args)
 		continue;
 	}
 
-	dbg("MFC thread finished");
+	printf("MFC thread finished\n");
+	return 0;
+}
+
+void *daemon_thread_func(void *args)
+{
+	const int interval = 2;
+	const int run_limit = -1;  // unit: second, -1 means run until no frame
+
+	int run_time = 0;
+	struct instance *i = (struct instance *)args;
+	static int last_decoded_cnt = 0;
+
+	while(1) {
+		sleep(interval);
+		if (last_decoded_cnt == i->decoded_cnt) {
+			printf("No frame decoded in last %d seconds\n", interval);
+			break;
+		}
+		last_decoded_cnt = i->decoded_cnt;
+
+		if (run_limit != -1 && (run_time += interval) > run_limit) {
+			printf("Run time = %d seconds\n", run_limit);
+			break;
+		}
+	}
+
+	i->finish = 1;
+	printf("Daemon thread finished\n");
+	pthread_cancel(mfc_thread);
 	return 0;
 }
 
 int main(int argc, char **argv)
 {
 	struct instance inst;
-	pthread_t mfc_thread;
-	pthread_t parser_thread;
 	int n;
 
 	printf("V4L2 Codec decoding example application\n");
@@ -333,10 +370,16 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	if (pthread_create(&daemon_thread, NULL, daemon_thread_func, &inst)) {
+		cleanup(&inst);
+		return 1;
+	}
+
 	pthread_join(parser_thread, 0);
 	pthread_join(mfc_thread, 0);
+	pthread_join(daemon_thread, 0);
 
-	dbg("Threads have finished");
+	printf("Threads have finished\n");
 
 	cleanup(&inst);
 	return 0;

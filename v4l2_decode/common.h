@@ -160,6 +160,7 @@ struct instance {
 	int error; /* The error flag */
 	int finish;  /* Flag set when decoding has been completed and all
 			threads finish */
+	int decoded_cnt; /* Total decoded frames count */
 };
 
 extern char g_scan_char;
