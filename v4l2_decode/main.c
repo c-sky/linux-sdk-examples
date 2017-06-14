@@ -240,13 +240,12 @@ void *mfc_thread_func(void *args)
 		//dbg("press any key to continue:");scanf("%c", &g_scan_char);
 
 		/* Display this cap buf on LCD */
-		fb_power_on(i);
 		struct csky_fb_lcd_pbase_yuv base_yuv;
 		base_yuv.y = disp_paddr;
 		base_yuv.u = base_yuv.y + 1920*1088;
 		base_yuv.v = base_yuv.u + 1920*1088/4;
-
 		ioctl(i->fb.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
+		fb_power_on(i);
 		fb_wait_for_vsync(i);
 
 		if (s_last_dequeue >= 0) {

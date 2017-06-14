@@ -31,6 +31,8 @@
 #include "common.h"
 #include "fb.h"
 
+static enum csky_fb_pixel_format s_pixel_fmt;
+
 int fb_open(struct instance *i, char *name)
 {
 	struct fb_var_screeninfo fbinfo;
@@ -61,20 +63,23 @@ int fb_open(struct instance *i, char *name)
 	i->fb.full_size		= i->fb.stride * i->fb.virt_height;
 	i->fb.size		= i->fb.stride * fbinfo.yres;
 
-	if (ioctl(i->fb.fd, FBIOBLANK, FB_BLANK_POWERDOWN) < 0) {
-		dbg("set fb power down failed");
-		return -1;
-	}
-	dbg("set fb power down OK");
+	ioctl(i->fb.fd, CSKY_FBIO_GET_PIXEL_FMT, &s_pixel_fmt);
+	if (s_pixel_fmt != CSKY_FB_PIXEL_FMT_YUV420) {
+		if (ioctl(i->fb.fd, FBIOBLANK, FB_BLANK_POWERDOWN) < 0) {
+			dbg("set fb power down failed");
+			return -1;
+		}
+		dbg("set fb power down OK");
 
-	enum csky_fb_pixel_format pixel_fmt_new;
-	pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
-	if (ioctl(i->fb.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new) < 0) {
-		dbg("set fb fmt failed");
-		return -1;
+		enum csky_fb_pixel_format pixel_fmt_new;
+		pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
+		if (ioctl(i->fb.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new) < 0) {
+			dbg("set fb fmt failed");
+			return -1;
+		}
+		dbg("set fb fmt to be CSKY_LCDCON_DFS_YUV420 OK");
+		//fb_power_on(i);
 	}
-	dbg("set fb fmt to be CSKY_LCDCON_DFS_YUV420 OK");
-	fb_power_on(i);
 
 	return 0;
 }
@@ -85,6 +90,9 @@ int fb_power_on(struct instance *i)
 	if (s_fb_is_on) {
 		return 0;
 	}
+
+	if (s_pixel_fmt == CSKY_FB_PIXEL_FMT_YUV420)
+		return 0;
 
 	if (ioctl(i->fb.fd, FBIOBLANK, FB_BLANK_UNBLANK) < 0) {
 		dbg("set fb power on failed");
