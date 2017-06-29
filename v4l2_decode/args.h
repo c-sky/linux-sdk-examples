@@ -1,5 +1,4 @@
 /*
- * V4L2 Codec decoding example application
  * Lu Chongzhi <chongzhi_lu@c-sky.com>
  *
  * Argument parser header file
@@ -24,7 +23,7 @@
 
 #include "common.h"
 
-/* Pritn usage information of the application */
+/* Print usage information of the application */
 void print_usage(char *name);
 /* Parse the arguments that have been given to the application */
 int parse_args(struct instance *i, int argc, char **argv);

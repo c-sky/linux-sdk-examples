@@ -46,7 +46,7 @@ char g_scan_char;
 
 /* This is the size of the buffer for the compressed stream.
  * It limits the maximum compressed frame size. */
-#define STREAM_BUUFER_SIZE	(1024 * 1024)
+#define STREAM_BUFFER_SIZE	(1024 * 1024)
 /* The number of compress4ed stream buffers */
 #define STREAM_BUFFER_CNT	2
 
@@ -79,7 +79,7 @@ int extract_and_process_header(struct instance *i, AVCodecContext *pCodecCtx)
 		err("Failed to extract header from stream");
 		return -1;
 	}
-	//fwrite(pCodecCtx->extradata, pCodecCtx->extradata_size, 1, fp_es); 
+	//fwrite(pCodecCtx->extradata, pCodecCtx->extradata_size, 1, fp_es);
 #endif
 	memcpy(i->mfc.out_buf_addr[0], pCodecCtx->extradata, pCodecCtx->extradata_size);
 	fs = pCodecCtx->extradata_size;
@@ -100,13 +100,13 @@ int extract_and_process_header(struct instance *i, AVCodecContext *pCodecCtx)
 	{
 		sps[j]=i->ffmpeg.pFormatCtx->streams[0]->codec->extradata[j+8];
 	}
-	
+
 	for (j=0;j<ppsLength;j++)
 	{
 		pps[j]=i->ffmpeg.pFormatCtx->streams[0]->codec->extradata[j+8+2+1+spsLength];
 	}
-	
-	char nal_start[]={0,0,0,1}; 
+
+	char nal_start[]={0,0,0,1};
 	memcpy(i->mfc.out_buf_addr[fs], nal_start, 4);
 	fs = fs + 4;
 	memcpy(i->mfc.out_buf_addr[fs], sps, spsLength);
@@ -216,7 +216,7 @@ void *parser_thread_func(void *args)
 					continue;
 				}
 				else {
-					break;				
+					break;
 				}
 			}
 			if(i->ffmpeg.packet.data != NULL) {
@@ -229,13 +229,13 @@ void *parser_thread_func(void *args)
 				i->parser.finished = 1;
 				fs = 0;
 			}
-			
-			/*	
+
+			/*
 			ret = i->parser.func(&i->parser.ctx,
 				i->in.p + i->in.offs, i->in.size - i->in.offs,
 				i->mfc.out_buf_addr[n], i->mfc.out_buf_size,
 				&used, &fs, 0);
-			
+
 
 			if (ret == 0 && i->in.offs == i->in.size) {
 				dbg("Parser has extracted all frames");
@@ -431,7 +431,7 @@ int main(int argc, char **argv)
 
 	//AVFormatContext *pFormatCtx;
 	inst.ffmpeg.pFormatCtx = avformat_alloc_context();
-	
+
 	// Open video file
 	if(avformat_open_input(&inst.ffmpeg.pFormatCtx, inst.in.name, NULL, NULL) != 0)
 	{
@@ -439,9 +439,9 @@ int main(int argc, char **argv)
   		return -1; // Couldn't open file
 	}
 	//Dump information about file onto standard error
-	printf("--------------- File Information ----------------\n");  
+	printf("--------------- File Information ----------------\n");
 	av_dump_format(inst.ffmpeg.pFormatCtx, 0, inst.in.name, 0);
-	
+
 	if(avformat_find_stream_info(inst.ffmpeg.pFormatCtx,NULL)<0)
 	{
 		printf("Couldn't find stream information.\n");
@@ -465,17 +465,17 @@ int main(int argc, char **argv)
 		printf("Didn't find a video stream.\n");
 		return -1;
 	}
-	
+
 	AVCodecContext *pCodecCtx;
 	pCodecCtx = inst.ffmpeg.pFormatCtx->streams[inst.ffmpeg.videoStream]->codec;
 	printf("pCodecCtx->extradata_size = %d\n",
 			pCodecCtx->extradata_size);
-	
+
 // ****************************************************
 
 
 	if (mfc_dec_setup_output(&inst, inst.parser.codec,
-		STREAM_BUUFER_SIZE, STREAM_BUFFER_CNT)) {
+		STREAM_BUFFER_SIZE, STREAM_BUFFER_CNT)) {
 		cleanup(&inst);
 		return 1;
 	}

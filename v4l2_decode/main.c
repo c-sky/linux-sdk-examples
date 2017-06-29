@@ -42,7 +42,7 @@ char g_scan_char;
 
 /* This is the size of the buffer for the compressed stream.
  * It limits the maximum compressed frame size. */
-#define STREAM_BUUFER_SIZE	(1024 * 1024)
+#define STREAM_BUFFER_SIZE	(1024 * 1024)
 /* The number of compress4ed stream buffers */
 #define STREAM_BUFFER_CNT	2
 
@@ -321,7 +321,7 @@ int main(int argc, char **argv)
 	dbg("Successfully opened all necessary files and devices");
 
 	if (mfc_dec_setup_output(&inst, inst.parser.codec,
-		STREAM_BUUFER_SIZE, STREAM_BUFFER_CNT)) {
+		STREAM_BUFFER_SIZE, STREAM_BUFFER_CNT)) {
 		cleanup(&inst);
 		return 1;
 	}
