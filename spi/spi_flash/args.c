@@ -29,8 +29,8 @@ void print_usage(char *name)
 	printf("\t-r           - Read flash\n");
 	printf("\t-w           - Write flash\n");
 	printf("\t-e           - Erase flash\n");
-	printf("\t-o           - Offset of flash(decimal)\n");
-	printf("\t-l           - Length of operate(decimal)\n");
+	printf("\t-o <offset>  - Offset of flash(decimal)\n");
+	printf("\t-l <length>  - Length of operate(decimal)\n");
 	printf("\t-f <file>    - File read into or write from\n");
 	printf("\nExamples:\n");
 	printf("\t%s -d /dev/mtd0 -r -o 1024 -l 64\n", name);
