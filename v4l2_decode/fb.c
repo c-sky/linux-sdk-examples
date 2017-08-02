@@ -31,6 +31,8 @@
 #include "common.h"
 #include "fb.h"
 
+#define TEST_LCDC_RESET
+
 static enum csky_fb_pixel_format s_pixel_fmt;
 
 int fb_open(struct instance *i, char *name)
@@ -64,7 +66,11 @@ int fb_open(struct instance *i, char *name)
 	i->fb.size		= i->fb.stride * fbinfo.yres;
 
 	ioctl(i->fb.fd, CSKY_FBIO_GET_PIXEL_FMT, &s_pixel_fmt);
+#ifndef TEST_LCDC_RESET
 	if (s_pixel_fmt != CSKY_FB_PIXEL_FMT_YUV420) {
+#else
+	if (1) {
+#endif
 		if (ioctl(i->fb.fd, FBIOBLANK, FB_BLANK_POWERDOWN) < 0) {
 			dbg("set fb power down failed");
 			return -1;
@@ -91,8 +97,10 @@ int fb_power_on(struct instance *i)
 		return 0;
 	}
 
+#ifndef TEST_LCDC_RESET
 	if (s_pixel_fmt == CSKY_FB_PIXEL_FMT_YUV420)
 		return 0;
+#endif
 
 	if (ioctl(i->fb.fd, FBIOBLANK, FB_BLANK_UNBLANK) < 0) {
 		dbg("set fb power on failed");
