@@ -291,6 +291,15 @@ void *daemon_thread_func(void *args)
 	return 0;
 }
 
+/*
+void *exit_thread_func(void *args)
+{
+	sleep(10);
+	exit(0);
+	return 0;
+}
+*/
+
 int main(int argc, char **argv)
 {
 	struct instance inst;
@@ -374,6 +383,10 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+/*
+	pthread_t exit_thread;
+	pthread_create(&exit_thread, NULL, exit_thread_func, NULL);
+*/
 	pthread_join(parser_thread, 0);
 	pthread_join(mfc_thread, 0);
 	pthread_join(daemon_thread, 0);
