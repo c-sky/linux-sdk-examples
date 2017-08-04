@@ -76,7 +76,7 @@ int parse_args(struct instance *i, int argc, char **argv)
 
 	init_to_defaults(i);
 
-	while ((c = getopt(argc, argv, "c:d:f:i:m:V")) != -1) {
+	while ((c = getopt(argc, argv, "c:d:f:i:m:t:V")) != -1) {
 		switch (c) {
 		case 'c':
 			i->parser.codec = get_codec(optarg);
@@ -92,6 +92,9 @@ int parse_args(struct instance *i, int argc, char **argv)
 			break;
 		case 'm':
 			i->mfc.name = optarg;
+			break;
+		case 't':
+			i->misc.timeout = atoi(optarg);
 			break;
 		case 'V':
 			i->fb.double_buf = 1;

@@ -156,6 +156,12 @@ struct instance {
 		int finished;
 	} parser;
 
+	/* Misc parameters */
+	struct {
+		/* When timeout(in seconds) elapsed, this program will exit */
+		int timeout;
+	} misc;
+
 	/* Control */
 	int error; /* The error flag */
 	int finish;  /* Flag set when decoding has been completed and all

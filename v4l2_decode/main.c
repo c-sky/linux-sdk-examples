@@ -21,6 +21,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <linux/videodev2.h>
 #include <pthread.h>
@@ -291,14 +292,13 @@ void *daemon_thread_func(void *args)
 	return 0;
 }
 
-/*
-void *exit_thread_func(void *args)
+void *timeout_thread_func(void *args)
 {
-	sleep(10);
+	struct instance *i = (struct instance *)args;
+	sleep(i->misc.timeout);
 	exit(0);
 	return 0;
 }
-*/
 
 int main(int argc, char **argv)
 {
@@ -383,10 +383,13 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-/*
-	pthread_t exit_thread;
-	pthread_create(&exit_thread, NULL, exit_thread_func, NULL);
-*/
+	if (inst.misc.timeout > 0) {
+		pthread_t timeout_thread;
+		printf("*** To run timeout thread, timeout: %d seconds ***\n",
+			inst.misc.timeout);
+		pthread_create(&timeout_thread, NULL, timeout_thread_func, &inst);
+	}
+
 	pthread_join(parser_thread, 0);
 	pthread_join(mfc_thread, 0);
 	pthread_join(daemon_thread, 0);

@@ -31,7 +31,7 @@
 #include "common.h"
 #include "fb.h"
 
-//#define TEST_LCDC_RESET
+#define TEST_LCDC_RESET
 
 static enum csky_fb_pixel_format s_pixel_fmt;
 
@@ -118,6 +118,12 @@ int fb_wait_for_vsync(struct instance *i)
 
 	if (ioctl(i->fb.fd, FBIO_WAITFORVSYNC, &temp) < 0) {
 		err("Wait for vsync failed");
+
+		err("stop here...");
+		while (1) {
+			sleep(10);
+		}
+
 		return -1;
 	}
 	return 0;
