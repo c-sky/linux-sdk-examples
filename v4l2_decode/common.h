@@ -64,8 +64,7 @@
 #define dbg(...) {}
 #endif /* DEBUG */
 
-#define memzero(x)\
-        memset(&(x), 0, sizeof (x));
+#define memzero(x) memset(&(x), 0, sizeof (x));
 
 /* Maximum number of output buffers */
 #define MFC_MAX_OUT_BUF 16
@@ -148,9 +147,9 @@ struct instance {
 		unsigned long codec;
 		/* Callback function to the real parsing function.
 		 * Dependent on the codec used. */
-		int (*func)( struct mfc_parser_context *ctx,
-		        char* in, int in_size, char* out, int out_size,
-		        int *consumed, int *frame_size, char get_head);
+		int (*func)(struct mfc_parser_context *ctx,
+			    char* in, int in_size, char* out, int out_size,
+			    int *consumed, int *frame_size, char get_head);
 		/* Set when the parser has finished and end of file has
 		 * been reached */
 		int finished;
@@ -160,6 +159,9 @@ struct instance {
 	struct {
 		/* When timeout(in seconds) elapsed, this program will exit */
 		int timeout;
+		/* Record decoded yuv frames into record_filename */
+		char *record_filename;
+		FILE *record_fd;
 	} misc;
 
 	/* Control */

@@ -21,6 +21,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <linux/videodev2.h>
@@ -43,6 +44,7 @@ void print_usage(char *name)
 	printf("\t-m <device> - video decode device (e.g. /dev/video3)\n");
 	printf("\t-V - synchronise to vsync\n");
 	//printf("\t- <device> - \n");
+	printf("\t-r <file> - Record file name (e.g. ./video.yuv)\n");
 	printf("\tp2\n");
 	printf("\n");
 }
@@ -76,7 +78,7 @@ int parse_args(struct instance *i, int argc, char **argv)
 
 	init_to_defaults(i);
 
-	while ((c = getopt(argc, argv, "c:d:f:i:m:t:V")) != -1) {
+	while ((c = getopt(argc, argv, "c:d:f:i:m:t:Vr:")) != -1) {
 		switch (c) {
 		case 'c':
 			i->parser.codec = get_codec(optarg);
@@ -95,6 +97,9 @@ int parse_args(struct instance *i, int argc, char **argv)
 			break;
 		case 't':
 			i->misc.timeout = atoi(optarg);
+			break;
+		case 'r':
+			i->misc.record_filename = optarg;
 			break;
 		case 'V':
 			i->fb.double_buf = 1;

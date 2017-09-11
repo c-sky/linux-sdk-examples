@@ -182,8 +182,6 @@ void v4l_print_buffer(const void *arg)
 {
 	const struct v4l2_buffer *p = arg;
 	const struct v4l2_timecode *tc = &p->timecode;
-	const struct v4l2_plane *plane;
-	int i;
 
 	pr_cont("%02ld:%02d:%02d.%08ld index=%d, type=%s, "
 		"flags=0x%08x, field=%s, sequence=%d, memory=%s",
@@ -197,9 +195,10 @@ void v4l_print_buffer(const void *arg)
 			p->sequence, prt_names(p->memory, v4l2_memory_names));
 
 	if (V4L2_TYPE_IS_MULTIPLANAR(p->type) && p->m.planes) {
+		int i;
 		pr_cont("\n");
 		for (i = 0; i < p->length; ++i) {
-			plane = &p->m.planes[i];
+			const struct v4l2_plane *plane = &p->m.planes[i];
 			printk(KERN_DEBUG
 				"plane %d: bytesused=%d, data_offset=0x%08x, "
 				"offset/userptr=0x%lx, length=%d\n",

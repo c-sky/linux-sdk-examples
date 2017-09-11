@@ -52,6 +52,45 @@ char g_scan_char;
  * used and still enable MFC to decode with the hardware. */
 #define RESULT_EXTRA_BUFFER_CNT 2
 
+static int record_init(struct instance *i)
+{
+	if (i->misc.record_filename == NULL) {
+		return 0;
+	}
+
+	i->misc.record_fd = fopen(i->misc.record_filename, "w+b");
+	if (i->misc.record_fd == NULL) {
+		printf("create record file '%s' failed\n",
+			i->misc.record_filename);
+		return -1;
+	}
+	printf("create record file '%s' OK\n", i->misc.record_filename);
+	return 0;
+}
+
+static int record_deinit(struct instance *i)
+{
+	if (i->misc.record_fd) {
+		fclose(i->misc.record_fd);
+		i->misc.record_fd = NULL;
+	}
+	return 0;
+}
+
+static int record_yuv_pic(struct instance *i,
+			  char *y, char *u, char *v, int pixels)
+{
+	if (i->misc.record_fd == NULL) {
+		return 0;
+	}
+
+	fwrite(y, pixels, 1, i->misc.record_fd);
+	fwrite(u, pixels/4, 1, i->misc.record_fd);
+	fwrite(v, pixels/4, 1, i->misc.record_fd);
+
+	return 0;
+}
+
 void cleanup(struct instance *i)
 {
 	if (i->mfc.fd)
@@ -60,6 +99,7 @@ void cleanup(struct instance *i)
 		fb_close(i);
 	if (i->in.fd)
 		input_close(i);
+	record_deinit(i);
 }
 
 int dequeue_output(struct instance *i, int *n)
@@ -212,10 +252,24 @@ void *mfc_thread_func(void *args)
 		}
 		dbg("****** Decode Frames Count=%d ******", ++frame_count);
 
-#if 0
+		/* Display this cap buf on LCD */
+		struct csky_fb_lcd_pbase_yuv base_yuv;
+		base_yuv.y = disp_paddr;
+		base_yuv.u = base_yuv.y + 1920*1088;
+		base_yuv.v = base_yuv.u + 1920*1088/4;
+		ioctl(i->fb.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
+		fb_power_on(i);
+		fb_wait_for_vsync(i);
+
 		if (i->mfc.cap_buf_addr[n][0] != MAP_FAILED) {
-			int loop;
 			char *cap_data = i->mfc.cap_buf_addr[n][0];
+			record_yuv_pic(i,
+				       &(cap_data[0]),
+				       &(cap_data[1920*1088]),
+				       &(cap_data[1920*1088 + 1920*1088/4]),
+				       (i->fb.width * i->fb.height));
+#if 0
+			int loop;
 
 			dbg("cap[%d] (vaddr=%p, disp_paddr=0x%08x)",
 				n, i->mfc.cap_buf_addr[n][0], disp_paddr);
@@ -236,18 +290,9 @@ void *mfc_thread_func(void *args)
 				printf("%02x ", cap_data[loop + 1920*1088 + 1920*1088/4]);
 			}
 			printf("\n");
-		}
 #endif
+		}
 		//dbg("press any key to continue:");scanf("%c", &g_scan_char);
-
-		/* Display this cap buf on LCD */
-		struct csky_fb_lcd_pbase_yuv base_yuv;
-		base_yuv.y = disp_paddr;
-		base_yuv.u = base_yuv.y + 1920*1088;
-		base_yuv.v = base_yuv.u + 1920*1088/4;
-		ioctl(i->fb.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
-		fb_power_on(i);
-		fb_wait_for_vsync(i);
 
 		if (s_last_dequeue >= 0) {
 			mfc_dec_queue_buf_cap(i, s_last_dequeue);
@@ -361,6 +406,11 @@ int main(int argc, char **argv)
 	}
 
 	if (mfc_stream(&inst, V4L2_BUF_TYPE_VIDEO_CAPTURE, VIDIOC_STREAMON)) {
+		cleanup(&inst);
+		return 1;
+	}
+
+	if (record_init(&inst) != 0) {
 		cleanup(&inst);
 		return 1;
 	}
