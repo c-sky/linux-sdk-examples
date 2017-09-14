@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 	int timeout, timeleft, i, fd,
 	    sleep_sec, mode, feed_times, ret;
 
-	if (argc < 3) {
+	if (argc != 5) {
 		help_info();
 		return 1;
 	}
@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 	if (ret < 0)
 		perror("wdt set time error");
 	else
-		printf("set wdt time out % seconds\n", timeout);
+		printf("set wdt time out %d seconds\n", timeout);
 	ret = ioctl(fd, WDIOC_GETTIMEOUT, &timeout);
 	if (ret < 0)
 		perror("wdt set time error");
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 
 void help_info(void)
 {
-	printf("Usage: wdt_driver_test <timeout> <sleep> <mode>\n");
+	printf("Usage:wdt_driver_test <timeout> <sleep> <mode> <feed_times>\n");
 	printf("    timeout: value in seconds to cause wdt timeout/reset\n");
 	printf("    sleep: value in seconds to service the wdt\n");
 	printf("    mode: 0 - Service wdt with ioctl(), 1 - with write()\n");
