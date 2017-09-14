@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 			break;
 		}
 		else
-			printf("feed wdt %d over\n", i + 1);
+			printf("feed wdt %d ok\n", i + 1);
 	}
 
 	return 0;
