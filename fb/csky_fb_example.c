@@ -1,4 +1,6 @@
 /*
+ * lcdc test example
+ *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
  * may be copied, distributed, and modified under those terms.
@@ -28,24 +30,28 @@
 
 #include "csky_fb_test.h"
 
-
 #define EXIT_TEST 0xEEEE
 
 static struct csky_fb_test_info info;
 
 #ifndef MAX_PATH
-# define MAX_PATH 256
+#define MAX_PATH 256
 #endif
 static char action[MAX_PATH];
 
 static int frame_num = 1;
+
+static int load_file(void *ptr, char *path);
+
+#define CSKY_FB_MAJOR_NUM (1)
+#define CSKY_FB_MINOR_NUM (0)
 
 /*
  * reads a line from stdin and stores the first word into the buffer @str
  */
 char *get_first_str(char *str)
 {
-	char buf[MAX_PATH] = {0};
+	char buf[MAX_PATH] = { 0 };
 
 	if ((fgets(buf, sizeof(buf), stdin) == NULL) && ferror(stdin)) {
 		printf("fgets error\n");
@@ -58,7 +64,8 @@ char *get_first_str(char *str)
 
 void show_help(void)
 {
-	printf("Usage: csky_fb_test  path\n");
+	printf("version: %d.%d\n", CSKY_FB_MAJOR_NUM, CSKY_FB_MINOR_NUM);
+	printf("Usage: csky_fb_example path\n");
 	printf("Where path = framebuffer device name, e.g. /dev/fb0\n");
 }
 
@@ -82,7 +89,7 @@ void show_menu(void)
 
 int test_lcdc_enable(void)
 {
-	char choice[MAX_PATH] = {0};
+	char choice[MAX_PATH] = { 0 };
 	int tmp;
 
 	while (1) {
@@ -103,8 +110,7 @@ int test_lcdc_enable(void)
 			printf("disable lcdc\n");
 			ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 			ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
-		}
-		else
+		} else
 			printf("invalid input\n");
 	}
 
@@ -114,7 +120,7 @@ int test_lcdc_enable(void)
 int test_set_pixel_format(void)
 {
 	enum csky_fb_pixel_format pixel_fmt;
-	char choice[MAX_PATH] = {0};
+	char choice[MAX_PATH] = { 0 };
 	int tmp;
 
 	while (1) {
@@ -183,7 +189,7 @@ int test_get_pixel_format(void)
 int test_wait_for_vsync(void)
 {
 	int tmp;
-	char buf[MAX_PATH] = {0};
+	char buf[MAX_PATH] = { 0 };
 	int count;
 	int i;
 
@@ -218,11 +224,12 @@ void set_screen_color_32bpp(void *ptr, unsigned int color)
 
 	width = info.var.xres;
 	height = info.var.yres;
-	pixel_len = 4; //32bpp
+	pixel_len = 4;		//32bpp
 
 	for (y = 0; y < height; y++)
 		for (x = 0; x < width; x++)
-			*(unsigned int *)(addr + (y*width+x)*pixel_len) = color;
+			*(unsigned int *)(addr + (y * width + x) * pixel_len) =
+			    color;
 
 	return;
 }
@@ -230,7 +237,7 @@ void set_screen_color_32bpp(void *ptr, unsigned int color)
 int test_pan_display(void)
 {
 	int tmp;
-	char choice[MAX_PATH] = {0};
+	char choice[MAX_PATH] = { 0 };
 	int size = info.fix.line_length * info.var.yres;
 	enum csky_fb_pixel_format pixel_fmt = CSKY_LCDCON_DFS_RGB;
 
@@ -241,7 +248,8 @@ int test_pan_display(void)
 	ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt);
 
 	set_screen_color_32bpp(info.ptr, COLOR_RED);
-	set_screen_color_32bpp(info.ptr+size, COLOR_BLUE);
+	set_screen_color_32bpp((void *)((unsigned int)info.ptr + size),
+			       COLOR_BLUE);
 
 	/* init lcdc */
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
@@ -263,15 +271,13 @@ int test_pan_display(void)
 			//ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 			ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
 			frame_num = 1;
-		}
-		else if (strcasecmp(choice, "2") == 0) {
+		} else if (strcasecmp(choice, "2") == 0) {
 			printf("frame2\n");
 			info.var.yoffset = info.var.yres;
 			//ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 			ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
 			frame_num = 2;
-		}
-		else
+		} else
 			printf("invalid input\n");
 	}
 
@@ -292,18 +298,15 @@ int test_display_yuv_image(void)
 
 	/* read image data into framebuffer */
 	size = load_file(info.ptr, "./yuvtest420.img");
-	if (size > 0)
-	{
+	if (size > 0) {
 		/* set pixel format to yuv420 */
 		pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
 		ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new);
 
 		/* set y/u/v base address */
 		base_yuv.y = base;
-		base_yuv.u = base_yuv.y +
-			     info.var.xres * info.var.yres;
-		base_yuv.v = base_yuv.u +
-			     info.var.xres * info.var.yres / 4;
+		base_yuv.u = base_yuv.y + info.var.xres * info.var.yres;
+		base_yuv.v = base_yuv.u + info.var.xres * info.var.yres / 4;
 		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
 	}
 
@@ -328,42 +331,36 @@ int test_display_yuv_image2(void)
 
 	/* read image data into framebuffer */
 	size = load_file(info.ptr, "./yuvtest420.img");
-	if (size > 0)
-	{
+	if (size > 0) {
 		/* set pixel format to yuv420 */
 		pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
 		ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new);
 
 		/* set y/u/v base address */
 		base_yuv.y = base;
-		base_yuv.u = base_yuv.y +
-			     info.var.xres * info.var.yres;
-		base_yuv.v = base_yuv.u +
-			     info.var.xres * info.var.yres / 4;
+		base_yuv.u = base_yuv.y + info.var.xres * info.var.yres;
+		base_yuv.v = base_yuv.u + info.var.xres * info.var.yres / 4;
 		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
 	}
 
 	/* init lcdc */
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
 
-	load_file(info.ptr + size, "./yuvtest420_2.img");
+	load_file((void *)((unsigned int)info.ptr + size),
+		  "./yuvtest420_2.img");
 
-	for (i=0; i<30; i++) {
+	for (i = 0; i < 30; i++) {
 		/* frame 1 */
 		base_yuv.y = base;
-		base_yuv.u = base_yuv.y +
-			     info.var.xres * info.var.yres;
-		base_yuv.v = base_yuv.u +
-			     info.var.xres * info.var.yres / 4;
+		base_yuv.u = base_yuv.y + info.var.xres * info.var.yres;
+		base_yuv.v = base_yuv.u + info.var.xres * info.var.yres / 4;
 		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
 		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 
 		/* frame 2 */
 		base_yuv.y = base + size;
-		base_yuv.u = base_yuv.y +
-			     info.var.xres * info.var.yres;
-		base_yuv.v = base_yuv.u +
-			     info.var.xres * info.var.yres / 4;
+		base_yuv.u = base_yuv.y + info.var.xres * info.var.yres;
+		base_yuv.v = base_yuv.u + info.var.xres * info.var.yres / 4;
 		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
 		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 	}
@@ -388,21 +385,25 @@ int test_display_rectangle_32bpp(void)
 
 	width = info.var.xres;
 	height = info.var.yres;
-	pixel_len = 4; //32bpp
+	pixel_len = 4;		//32bpp
 
-	memset(info.ptr, 0, width*height*pixel_len);
+	memset(info.ptr, 0, width * height * pixel_len);
 	j = 0;
-	for (i=0; i<width; i++)
-		*(unsigned int *)(info.ptr + (j*width+i)*pixel_len) = COLOR_RED;
+	for (i = 0; i < width; i++)
+		*(unsigned int *)((unsigned int)info.ptr +
+				  (j * width + i) * pixel_len) = COLOR_RED;
 	j = height - 1;
-	for (i=0; i<width; i++)
-		*(unsigned int *)(info.ptr + (j*width+i)*pixel_len) = COLOR_RED;
+	for (i = 0; i < width; i++)
+		*(unsigned int *)((unsigned int)info.ptr +
+				  (j * width + i) * pixel_len) = COLOR_RED;
 	i = 0;
-	for (j=0; j<height; j++)
-		*(unsigned int *)(info.ptr + (j*width+i)*pixel_len) = COLOR_RED;
+	for (j = 0; j < height; j++)
+		*(unsigned int *)((unsigned int)info.ptr +
+				  (j * width + i) * pixel_len) = COLOR_RED;
 	i = width - 1;
-	for (j=0; j<height; j++)
-		*(unsigned int *)(info.ptr + (j*width+i)*pixel_len) = COLOR_RED;
+	for (j = 0; j < height; j++)
+		*(unsigned int *)((unsigned int)info.ptr +
+				  (j * width + i) * pixel_len) = COLOR_RED;
 
 	if (frame_num == 2) {
 		/* pan display to frame #1 */
@@ -418,8 +419,7 @@ int test_display_rectangle_32bpp(void)
 
 int test_stress_test(void)
 {
-	char choice[MAX_PATH] = {0};
-	int tmp;
+	char choice[MAX_PATH] = { 0 };
 
 	while (1) {
 		printf("\n--- Stress Test ---\n");
@@ -439,8 +439,7 @@ int test_stress_test(void)
 				test_display_rectangle_32bpp();
 				sleep(1);
 			}
-		}
-		else
+		} else
 			printf("invalid input\n");
 	}
 
@@ -479,7 +478,7 @@ int do_fb_test(char *choice)
 	return ret;
 }
 
-int load_file(void *ptr, char *path)
+static int load_file(void *ptr, char *path)
 {
 	int fd;
 	struct stat statbuff;
@@ -536,14 +535,13 @@ int main(int argc, char **argv)
 	}
 
 	printf("fb res %dx%d virtual %dx%d, line_len %d, bpp %d\n",
-			info.var.xres, info.var.yres,
-			info.var.xres_virtual, info.var.yres_virtual,
-			info.fix.line_length, info.var.bits_per_pixel);
+	       info.var.xres, info.var.yres,
+	       info.var.xres_virtual, info.var.yres_virtual,
+	       info.fix.line_length, info.var.bits_per_pixel);
 
 	info.ptr = mmap(NULL,
 			info.var.yres_virtual * info.fix.line_length,
-			PROT_WRITE | PROT_READ,
-			MAP_SHARED, info.fd, 0);
+			PROT_WRITE | PROT_READ, MAP_SHARED, info.fd, 0);
 	if (info.ptr == MAP_FAILED) {
 		printf("ERROR: mmap Failed\n");
 		close(info.fd);
