@@ -16,13 +16,12 @@
 # limitations under the License.
 #
 
-TCPATH = csky-abiv2-linux-
-CC = ${TCPATH}gcc
+include ../Makefile.param
 
-SOURCES = main.c args.c common.c spi_flash.c
+SOURCES = csky_spi_flash_example.c args.c common.c spi_flash.c
 
 OBJECTS := $(SOURCES:.c=.o)
-EXEC = spi_flash
+EXEC = $(DST_DIR)/csky_spi_flash_example
 CFLAGS = -O0 -Wall -g -lm
 
 all: $(EXEC)

@@ -28,18 +28,18 @@ static struct timeval s_tv;
 
 void common_time_start(void)
 {
-	gettimeofday(&s_tv,NULL);
+	gettimeofday(&s_tv, NULL);
 }
 
 void common_time_elapse(char *str, unsigned int *usec)
 {
 	struct timeval tv;
-	gettimeofday(&tv,NULL);
-	unsigned int elapsed_usec = tv.tv_sec*1000*1000 + tv.tv_usec -
-				    s_tv.tv_sec*1000*1000 - s_tv.tv_usec;
+	gettimeofday(&tv, NULL);
+	unsigned int elapsed_usec = tv.tv_sec * 1000 * 1000 + tv.tv_usec -
+	    s_tv.tv_sec * 1000 * 1000 - s_tv.tv_usec;
 	if (str != NULL) {
 		printf("  <<%8u usec costed for '%s' >>\n",
-			elapsed_usec, (str != NULL) ? str : "something");
+		       elapsed_usec, (str != NULL) ? str : "something");
 	}
 
 	if (usec != NULL) {
@@ -62,4 +62,3 @@ void common_dump_hex(char *buf, unsigned int len)
 	}
 	printf("\n");
 }
-
