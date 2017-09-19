@@ -39,7 +39,7 @@
 #include "v4l2_common.h"
 
 char g_scan_char;
-#define DEBUG_SCAN_STEP //dbg("press any key to continue:");scanf("%c", &g_scan_char);
+#define DEBUG_SCAN_STEP		//dbg("press any key to continue:");scanf("%c", &g_scan_char);
 
 /* This is the size of the buffer for the compressed stream.
  * It limits the maximum compressed frame size. */
@@ -61,7 +61,7 @@ static int record_init(struct instance *i)
 	i->misc.record_fd = fopen(i->misc.record_filename, "w+b");
 	if (i->misc.record_fd == NULL) {
 		printf("create record file '%s' failed\n",
-			i->misc.record_filename);
+		       i->misc.record_filename);
 		return -1;
 	}
 	printf("create record file '%s' OK\n", i->misc.record_filename);
@@ -85,8 +85,8 @@ static int record_yuv_pic(struct instance *i,
 	}
 
 	fwrite(y, pixels, 1, i->misc.record_fd);
-	fwrite(u, pixels/4, 1, i->misc.record_fd);
-	fwrite(v, pixels/4, 1, i->misc.record_fd);
+	fwrite(u, pixels / 4, 1, i->misc.record_fd);
+	fwrite(v, pixels / 4, 1, i->misc.record_fd);
 
 	return 0;
 }
@@ -118,7 +118,8 @@ int dequeue_output(struct instance *i, int *n)
 	return 0;
 }
 
-int dequeue_capture(struct instance *i, int *n, unsigned int *disp_paddr, int *finished)
+int dequeue_capture(struct instance *i, int *n, unsigned int *disp_paddr,
+		    int *finished)
 {
 	struct v4l2_buffer qbuf;
 
@@ -133,7 +134,7 @@ int dequeue_capture(struct instance *i, int *n, unsigned int *disp_paddr, int *f
 	//v4l_print_buffer(&qbuf);
 
 	*n = qbuf.index;
-	*disp_paddr = *((unsigned int*)qbuf.timecode.userbits);
+	*disp_paddr = *((unsigned int *)qbuf.timecode.userbits);
 	*finished = qbuf.bytesused == 0;
 
 	dbg("n=%d, qbuf.bytesused=%d, finished=%d, user_addr=%p, disp_paddr=0x%08x",
@@ -163,9 +164,11 @@ void *parser_thread_func(void *args)
 		if (n < i->mfc.out_buf_cnt && !i->parser.finished) {
 			//dbg("parser.func = %p", i->parser.func);
 			ret = i->parser.func(&i->parser.ctx,
-				i->in.p + i->in.offs, i->in.size - i->in.offs,
-				i->mfc.out_buf_addr[n], i->mfc.out_buf_size,
-				&used, &fs, 0);
+					     i->in.p + i->in.offs,
+					     i->in.size - i->in.offs,
+					     i->mfc.out_buf_addr[n],
+					     i->mfc.out_buf_size, &used, &fs,
+					     0);
 
 			if (ret == 0 && i->in.offs == i->in.size) {
 				dbg("Parser has extracted all frames");
@@ -175,21 +178,22 @@ void *parser_thread_func(void *args)
 			}
 
 			DEBUG_SCAN_STEP;
-			#if 0
+#if 0
 			dbg("Extracted frame of size %d: %02X %02X %02X %02X %02X %02X %02X %02X ...",
-				fs,
-				i->mfc.out_buf_addr[n][0], i->mfc.out_buf_addr[n][1],
+				fs, i->mfc.out_buf_addr[n][0], i->mfc.out_buf_addr[n][1],
 				i->mfc.out_buf_addr[n][2], i->mfc.out_buf_addr[n][3],
 				i->mfc.out_buf_addr[n][4], i->mfc.out_buf_addr[n][5],
 				i->mfc.out_buf_addr[n][6], i->mfc.out_buf_addr[n][7]);
-			#endif
+#endif
 
-			if (s_output_stream_on == 0 && i->in.offs > 512){
+			if (s_output_stream_on == 0 && i->in.offs > 512) {
 				int ret;
-				ret = mfc_stream(i, V4L2_BUF_TYPE_VIDEO_OUTPUT, VIDIOC_STREAMON);
+				ret =
+				    mfc_stream(i, V4L2_BUF_TYPE_VIDEO_OUTPUT,
+					       VIDIOC_STREAMON);
 				if (ret) {
 					err("Failed");
-					return (void*)(-1);
+					return (void *)(-1);
 				}
 				s_output_stream_on = 1;
 			}
@@ -199,8 +203,7 @@ void *parser_thread_func(void *args)
 
 			i->mfc.out_buf_flag[n] = 1;
 			i->in.offs += used;
-		}
-		else {
+		} else {
 			DEBUG_SCAN_STEP;
 			ret = dequeue_output(i, &n);
 			DEBUG_SCAN_STEP;
@@ -231,9 +234,11 @@ void *mfc_thread_func(void *args)
 	int frame_count = 0;
 #endif
 	dbg("mfc_thread_func+");
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL); //允许退出线程
- 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL); //设置立即取消
 
+	/* The thread is cancelable. */
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+	/* The thread can be canceled at any time. */
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 
 	while (!i->error && !i->finish) {
 		/* Can dequeue a processed buffer */
@@ -255,8 +260,8 @@ void *mfc_thread_func(void *args)
 		/* Display this cap buf on LCD */
 		struct csky_fb_lcd_pbase_yuv base_yuv;
 		base_yuv.y = disp_paddr;
-		base_yuv.u = base_yuv.y + 1920*1088;
-		base_yuv.v = base_yuv.u + 1920*1088/4;
+		base_yuv.u = base_yuv.y + 1920 * 1088;
+		base_yuv.v = base_yuv.u + 1920 * 1088 / 4;
 		ioctl(i->fb.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
 		fb_power_on(i);
 		fb_wait_for_vsync(i);
@@ -265,14 +270,15 @@ void *mfc_thread_func(void *args)
 			char *cap_data = i->mfc.cap_buf_addr[n][0];
 			record_yuv_pic(i,
 				       &(cap_data[0]),
-				       &(cap_data[1920*1088]),
-				       &(cap_data[1920*1088 + 1920*1088/4]),
+				       &(cap_data[1920 * 1088]),
+				       &(cap_data
+					 [1920 * 1088 + 1920 * 1088 / 4]),
 				       (i->fb.width * i->fb.height));
 #if 0
 			int loop;
 
 			dbg("cap[%d] (vaddr=%p, disp_paddr=0x%08x)",
-				n, i->mfc.cap_buf_addr[n][0], disp_paddr);
+			    n, i->mfc.cap_buf_addr[n][0], disp_paddr);
 			printf("\t Y data is:");
 			for (loop = 0; loop < 16; ++loop) {
 				printf("%02x ", cap_data[loop]);
@@ -281,13 +287,15 @@ void *mfc_thread_func(void *args)
 
 			printf("\t U data is:");
 			for (loop = 0; loop < 16; ++loop) {
-				printf("%02x ", cap_data[loop + 1920*1088]);
+				printf("%02x ", cap_data[loop + 1920 * 1088]);
 			}
 			printf("\n");
 
 			printf("\t V data is:");
 			for (loop = 0; loop < 16; ++loop) {
-				printf("%02x ", cap_data[loop + 1920*1088 + 1920*1088/4]);
+				printf("%02x ",
+				       cap_data[loop + 1920 * 1088 +
+						1920 * 1088 / 4]);
 			}
 			printf("\n");
 #endif
@@ -299,8 +307,7 @@ void *mfc_thread_func(void *args)
 			//i->mfc.cap_buf_flag[s_last_dequeue] = BUF_FREE;
 		}
 		s_last_dequeue = n;
-		dbg("Current display cap_buf_addr[%d]:0x%08x",
-			n, disp_paddr);
+		dbg("Current display cap_buf_addr[%d]:0x%08x", n, disp_paddr);
 		continue;
 	}
 
@@ -311,16 +318,17 @@ void *mfc_thread_func(void *args)
 void *daemon_thread_func(void *args)
 {
 	const int interval = 2;
-	const int run_limit = -1;  // unit: second, -1 means run until no frame
+	const int run_limit = -1;	// unit: second, -1 means run until no frame
 
 	int run_time = 0;
 	struct instance *i = (struct instance *)args;
 	static int last_decoded_cnt = 0;
 
-	while(1) {
+	while (1) {
 		sleep(interval);
 		if (last_decoded_cnt == i->decoded_cnt) {
-			printf("No frame decoded in last %d seconds\n", interval);
+			printf("No frame decoded in last %d seconds\n",
+			       interval);
 			break;
 		}
 		last_decoded_cnt = i->decoded_cnt;
@@ -375,7 +383,7 @@ int main(int argc, char **argv)
 	dbg("Successfully opened all necessary files and devices");
 
 	if (mfc_dec_setup_output(&inst, inst.parser.codec,
-		STREAM_BUFFER_SIZE, STREAM_BUFFER_CNT)) {
+				 STREAM_BUFFER_SIZE, STREAM_BUFFER_CNT)) {
 		cleanup(&inst);
 		return 1;
 	}
@@ -395,7 +403,7 @@ int main(int argc, char **argv)
 	 * following code. Otherwise it could be ommited and it all would be
 	 * handled by the mfc_thread.*/
 
-	for (n = 0 ; n < inst.mfc.cap_buf_cnt; n++) {
+	for (n = 0; n < inst.mfc.cap_buf_cnt; n++) {
 		if (mfc_dec_queue_buf_cap(&inst, n)) {
 			cleanup(&inst);
 			return 1;
@@ -436,8 +444,9 @@ int main(int argc, char **argv)
 	if (inst.misc.timeout > 0) {
 		pthread_t timeout_thread;
 		printf("*** To run timeout thread, timeout: %d seconds ***\n",
-			inst.misc.timeout);
-		pthread_create(&timeout_thread, NULL, timeout_thread_func, &inst);
+		       inst.misc.timeout);
+		pthread_create(&timeout_thread, NULL, timeout_thread_func,
+			       &inst);
 	}
 
 	pthread_join(parser_thread, 0);
@@ -449,4 +458,3 @@ int main(int argc, char **argv)
 	cleanup(&inst);
 	return 0;
 }
-

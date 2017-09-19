@@ -29,4 +29,3 @@ void print_usage(char *name);
 int parse_args(struct instance *i, int argc, char **argv);
 
 #endif /* INCLUDE_FILEOPS_H */
-

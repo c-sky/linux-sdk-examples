@@ -147,9 +147,9 @@ struct instance {
 		unsigned long codec;
 		/* Callback function to the real parsing function.
 		 * Dependent on the codec used. */
-		int (*func)(struct mfc_parser_context *ctx,
-			    char* in, int in_size, char* out, int out_size,
-			    int *consumed, int *frame_size, char get_head);
+		int (*func) (struct mfc_parser_context * ctx,
+			     char *in, int in_size, char *out, int out_size,
+			     int *consumed, int *frame_size, char get_head);
 		/* Set when the parser has finished and end of file has
 		 * been reached */
 		int finished;
@@ -165,12 +165,11 @@ struct instance {
 	} misc;
 
 	/* Control */
-	int error; /* The error flag */
-	int finish;  /* Flag set when decoding has been completed and all
-			threads finish */
-	int decoded_cnt; /* Total decoded frames count */
+	int error;		/* The error flag */
+	int finish;		/* Flag set when decoding has been completed and all
+				   threads finish */
+	int decoded_cnt;	/* Total decoded frames count */
 };
 
 extern char g_scan_char;
 #endif /* INCLUDE_COMMON_H */
-

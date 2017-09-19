@@ -29,11 +29,15 @@
 #include "common.h"
 #include "parser.h"
 
+#define CSKY_V4L2_DECODE_MAJOR_NUM (1)
+#define CSKY_V4L2_DECODE_MINOR_NUM (0)
 
 void print_usage(char *name)
 {
 	// "d:i:m:c:V"
 	// for example: v4l2_decode -c mpeg4 -d /dev/fb0 -i /mnt/nfs/mpeg4_demo.mp4 -m /dev/video3 -V
+	printf("version: %d.%d\n", CSKY_V4L2_DECODE_MAJOR_NUM,
+	       CSKY_V4L2_DECODE_MINOR_NUM);
 	printf("Usage:\n");
 	printf("\t./%s\n", name);
 	printf("\t-c <codec> - The codec of the encoded stream\n");
@@ -78,7 +82,7 @@ int parse_args(struct instance *i, int argc, char **argv)
 
 	init_to_defaults(i);
 
-	while ((c = getopt(argc, argv, "c:d:f:i:m:t:Vr:")) != -1) {
+	while ((c = getopt(argc, argv, "c:d:i:m:t:Vr:")) != -1) {
 		switch (c) {
 		case 'c':
 			i->parser.codec = get_codec(optarg);
@@ -86,9 +90,6 @@ int parse_args(struct instance *i, int argc, char **argv)
 		case 'd':
 			i->fb.name = optarg;
 			break;
-		//case 'f':
-		//	i->fimc.name = optarg;
-		//	break;
 		case 'i':
 			i->in.name = optarg;
 			break;
@@ -111,7 +112,7 @@ int parse_args(struct instance *i, int argc, char **argv)
 	}
 
 	if (!i->in.name || !i->fb.name || !i->mfc.name) {
-		err("The following arguments are required: -d -f -i -m -c");
+		err("The following arguments are required: -d -i -m -c");
 		return -1;
 	}
 
@@ -137,4 +138,3 @@ int parse_args(struct instance *i, int argc, char **argv)
 
 	return 0;
 }
-

@@ -16,14 +16,13 @@
 # limitations under the License.
 #
 
-TCPATH = csky-abiv2-linux-
-CC = ${TCPATH}gcc
+include ../Makefile.param
 
-SOURCES = main.c fileops.c args.c parser.c mfc.c
+SOURCES = csky_v4l2_decode_example.c fileops.c args.c parser.c mfc.c
 SOURCES += v4l2_common.c fb.c
 
 OBJECTS := $(SOURCES:.c=.o)
-EXEC = v4l2_decode
+EXEC = $(DST_DIR)/csky_v4l2_decode_example
 CFLAGS = -O0 -Wall -g -lm
 
 all: $(EXEC)

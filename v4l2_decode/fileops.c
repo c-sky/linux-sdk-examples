@@ -55,4 +55,3 @@ void input_close(struct instance *i)
 	munmap(i->in.p, i->in.size);
 	close(i->in.fd);
 }
-

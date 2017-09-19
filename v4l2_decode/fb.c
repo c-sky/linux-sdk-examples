@@ -52,18 +52,18 @@ int fb_open(struct instance *i, char *name)
 		return -1;
 	}
 	dbg("Framebuffer properties: xres=%d, yres=%d, bpp=%d",
-		fbinfo.xres, fbinfo.yres, fbinfo.bits_per_pixel);
+	    fbinfo.xres, fbinfo.yres, fbinfo.bits_per_pixel);
 	dbg("Virtual resolution: vxres=%d vyres=%d",
-		fbinfo.xres_virtual, fbinfo.yres_virtual);
+	    fbinfo.xres_virtual, fbinfo.yres_virtual);
 
-	i->fb.width		= fbinfo.xres;
-	i->fb.height		= fbinfo.yres;
-	i->fb.virt_width	= fbinfo.xres_virtual;
-	i->fb.virt_height	= fbinfo.yres_virtual;
-	i->fb.bpp		= fbinfo.bits_per_pixel;
-	i->fb.stride		= i->fb.virt_width * i->fb.bpp / 8;
-	i->fb.full_size		= i->fb.stride * i->fb.virt_height;
-	i->fb.size		= i->fb.stride * fbinfo.yres;
+	i->fb.width = fbinfo.xres;
+	i->fb.height = fbinfo.yres;
+	i->fb.virt_width = fbinfo.xres_virtual;
+	i->fb.virt_height = fbinfo.yres_virtual;
+	i->fb.bpp = fbinfo.bits_per_pixel;
+	i->fb.stride = i->fb.virt_width * i->fb.bpp / 8;
+	i->fb.full_size = i->fb.stride * i->fb.virt_height;
+	i->fb.size = i->fb.stride * fbinfo.yres;
 
 	ioctl(i->fb.fd, CSKY_FBIO_GET_PIXEL_FMT, &s_pixel_fmt);
 #ifndef TEST_LCDC_RESET
@@ -79,7 +79,8 @@ int fb_open(struct instance *i, char *name)
 
 		enum csky_fb_pixel_format pixel_fmt_new;
 		pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
-		if (ioctl(i->fb.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new) < 0) {
+		if (ioctl(i->fb.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new) <
+		    0) {
 			dbg("set fb fmt failed");
 			return -1;
 		}
@@ -96,7 +97,6 @@ int fb_power_on(struct instance *i)
 	if (s_fb_is_on) {
 		return 0;
 	}
-
 #ifndef TEST_LCDC_RESET
 	if (s_pixel_fmt == CSKY_FB_PIXEL_FMT_YUV420)
 		return 0;
@@ -133,4 +133,3 @@ void fb_close(struct instance *i)
 {
 	close(i->fb.fd);
 }
-

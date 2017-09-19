@@ -1,8 +1,18 @@
 /*
- * Copyright (C) 2017 C-SKY Microsystems
+ * V4L2 Codec decoding example application
+ * Lu Chongzhi <chongzhi_lu@c-sky.com>
  *
- * SPDX-License-Identifier:     GPL-2.0+
+ * V4L2 print common func
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
+ *
+ * Authors:	Alan Cox, <alan@lxorguk.ukuu.org.uk> (version 1)
+ *              Mauro Carvalho Chehab <mchehab@infradead.org> (version 2)
  */
+
 
 #include "v4l2_common.h"
 
@@ -15,62 +25,36 @@ typedef int bool;
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
 #endif
 
-
 #define prt_names(a, arr) (((unsigned)(a)) < ARRAY_SIZE(arr) ? arr[a] : "unknown")
 
 const char *v4l2_type_names[] = {
-	[0]				   = "0",
-	[V4L2_BUF_TYPE_VIDEO_CAPTURE]      = "vid-cap",
-	[V4L2_BUF_TYPE_VIDEO_OVERLAY]      = "vid-overlay",
-	[V4L2_BUF_TYPE_VIDEO_OUTPUT]       = "vid-out",
-	[V4L2_BUF_TYPE_VBI_CAPTURE]        = "vbi-cap",
-	[V4L2_BUF_TYPE_VBI_OUTPUT]         = "vbi-out",
+	[0] = "0",
+	[V4L2_BUF_TYPE_VIDEO_CAPTURE] = "vid-cap",
+	[V4L2_BUF_TYPE_VIDEO_OVERLAY] = "vid-overlay",
+	[V4L2_BUF_TYPE_VIDEO_OUTPUT] = "vid-out",
+	[V4L2_BUF_TYPE_VBI_CAPTURE] = "vbi-cap",
+	[V4L2_BUF_TYPE_VBI_OUTPUT] = "vbi-out",
 	[V4L2_BUF_TYPE_SLICED_VBI_CAPTURE] = "sliced-vbi-cap",
-	[V4L2_BUF_TYPE_SLICED_VBI_OUTPUT]  = "sliced-vbi-out",
+	[V4L2_BUF_TYPE_SLICED_VBI_OUTPUT] = "sliced-vbi-out",
 	[V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY] = "vid-out-overlay",
 	[V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE] = "vid-cap-mplane",
 	[V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE] = "vid-out-mplane",
-	[V4L2_BUF_TYPE_SDR_CAPTURE]        = "sdr-cap",
-	[V4L2_BUF_TYPE_SDR_OUTPUT]         = "sdr-out",
+	[V4L2_BUF_TYPE_SDR_CAPTURE] = "sdr-cap",
+	[V4L2_BUF_TYPE_SDR_OUTPUT] = "sdr-out",
 };
 
 const char *v4l2_field_names[] = {
-	[V4L2_FIELD_ANY]        = "any",
-	[V4L2_FIELD_NONE]       = "none",
-	[V4L2_FIELD_TOP]        = "top",
-	[V4L2_FIELD_BOTTOM]     = "bottom",
+	[V4L2_FIELD_ANY] = "any",
+	[V4L2_FIELD_NONE] = "none",
+	[V4L2_FIELD_TOP] = "top",
+	[V4L2_FIELD_BOTTOM] = "bottom",
 	[V4L2_FIELD_INTERLACED] = "interlaced",
-	[V4L2_FIELD_SEQ_TB]     = "seq-tb",
-	[V4L2_FIELD_SEQ_BT]     = "seq-bt",
-	[V4L2_FIELD_ALTERNATE]  = "alternate",
+	[V4L2_FIELD_SEQ_TB] = "seq-tb",
+	[V4L2_FIELD_SEQ_BT] = "seq-bt",
+	[V4L2_FIELD_ALTERNATE] = "alternate",
 	[V4L2_FIELD_INTERLACED_TB] = "interlaced-tb",
 	[V4L2_FIELD_INTERLACED_BT] = "interlaced-bt",
 };
-
-void v4l_print_querycap(struct v4l2_capability *arg)
-{
-	 const struct v4l2_capability *p = arg;
-
-	 printf("driver=%.*s, card=%.*s, bus=%.*s, version=0x%08x, \n\t"
-		 "capabilities=0x%08x, device_caps=0x%08x\n",
-		 (int)sizeof(p->driver), p->driver,
-		 (int)sizeof(p->card), p->card,
-		 (int)sizeof(p->bus_info), p->bus_info,
-		 p->version, p->capabilities, p->device_caps);
-}
-
-void v4l_print_fmtdesc(const void *arg)
-{
-	const struct v4l2_fmtdesc *p = arg;
-
-	pr_cont("index=%u, type=%s, flags=0x%x, pixelformat=%c%c%c%c, description='%.*s'\n",
-		p->index, prt_names(p->type, v4l2_type_names),
-		p->flags, (p->pixelformat & 0xff),
-		(p->pixelformat >>  8) & 0xff,
-		(p->pixelformat >> 16) & 0xff,
-		(p->pixelformat >> 24) & 0xff,
-		(int)sizeof(p->description), p->description);
-}
 
 void v4l_print_format(const void *arg)
 {
@@ -95,7 +79,7 @@ void v4l_print_format(const void *arg)
 			"xfer_func=%u\n",
 			pix->width, pix->height,
 			(pix->pixelformat & 0xff),
-			(pix->pixelformat >>  8) & 0xff,
+			(pix->pixelformat >> 8) & 0xff,
 			(pix->pixelformat >> 16) & 0xff,
 			(pix->pixelformat >> 24) & 0xff,
 			prt_names(pix->field, v4l2_field_names),
@@ -112,16 +96,17 @@ void v4l_print_format(const void *arg)
 			"ycbcr_enc=%u, quantization=%u, xfer_func=%u\n",
 			mp->width, mp->height,
 			(mp->pixelformat & 0xff),
-			(mp->pixelformat >>  8) & 0xff,
+			(mp->pixelformat >> 8) & 0xff,
 			(mp->pixelformat >> 16) & 0xff,
 			(mp->pixelformat >> 24) & 0xff,
 			prt_names(mp->field, v4l2_field_names),
 			mp->colorspace, mp->num_planes, mp->flags,
 			mp->ycbcr_enc, mp->quantization, mp->xfer_func);
 		for (i = 0; i < mp->num_planes; i++)
-			printk(KERN_DEBUG "plane %u: bytesperline=%u sizeimage=%u\n", i,
-					mp->plane_fmt[i].bytesperline,
-					mp->plane_fmt[i].sizeimage);
+			printk(KERN_DEBUG
+			       "plane %u: bytesperline=%u sizeimage=%u\n", i,
+			       mp->plane_fmt[i].bytesperline,
+			       mp->plane_fmt[i].sizeimage);
 		break;
 	case V4L2_BUF_TYPE_VIDEO_OVERLAY:
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
@@ -129,11 +114,12 @@ void v4l_print_format(const void *arg)
 		/* Note: we can't print the clip list here since the clips
 		 * pointer is a userspace pointer, not a kernelspace
 		 * pointer. */
-		pr_cont(", wxh=%dx%d, x,y=%d,%d, field=%s, chromakey=0x%08x, clipcount=%u, clips=%p, bitmap=%p, global_alpha=0x%02x\n",
-			win->w.width, win->w.height, win->w.left, win->w.top,
-			prt_names(win->field, v4l2_field_names),
-			win->chromakey, win->clipcount, win->clips,
-			win->bitmap, win->global_alpha);
+		pr_cont
+		    (", wxh=%dx%d, x,y=%d,%d, field=%s, chromakey=0x%08x, clipcount=%u, clips=%p, bitmap=%p, global_alpha=0x%02x\n",
+		     win->w.width, win->w.height, win->w.left, win->w.top,
+		     prt_names(win->field, v4l2_field_names), win->chromakey,
+		     win->clipcount, win->clips, win->bitmap,
+		     win->global_alpha);
 		break;
 	case V4L2_BUF_TYPE_VBI_CAPTURE:
 	case V4L2_BUF_TYPE_VBI_OUTPUT:
@@ -143,7 +129,7 @@ void v4l_print_format(const void *arg)
 			vbi->sampling_rate, vbi->offset,
 			vbi->samples_per_line,
 			(vbi->sample_format & 0xff),
-			(vbi->sample_format >>  8) & 0xff,
+			(vbi->sample_format >> 8) & 0xff,
 			(vbi->sample_format >> 16) & 0xff,
 			(vbi->sample_format >> 24) & 0xff,
 			vbi->start[0], vbi->start[1],
@@ -153,66 +139,20 @@ void v4l_print_format(const void *arg)
 	case V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
 		sliced = &p->fmt.sliced;
 		pr_cont(", service_set=0x%08x, io_size=%d\n",
-				sliced->service_set, sliced->io_size);
+			sliced->service_set, sliced->io_size);
 		for (i = 0; i < 24; i++)
 			printk(KERN_DEBUG "line[%02u]=0x%04x, 0x%04x\n", i,
-				sliced->service_lines[0][i],
-				sliced->service_lines[1][i]);
+			       sliced->service_lines[0][i],
+			       sliced->service_lines[1][i]);
 		break;
 	case V4L2_BUF_TYPE_SDR_CAPTURE:
 	case V4L2_BUF_TYPE_SDR_OUTPUT:
 		sdr = &p->fmt.sdr;
 		pr_cont(", pixelformat=%c%c%c%c\n",
-			(sdr->pixelformat >>  0) & 0xff,
-			(sdr->pixelformat >>  8) & 0xff,
+			(sdr->pixelformat >> 0) & 0xff,
+			(sdr->pixelformat >> 8) & 0xff,
 			(sdr->pixelformat >> 16) & 0xff,
 			(sdr->pixelformat >> 24) & 0xff);
 		break;
 	}
 }
-
-static const char *v4l2_memory_names[] = {
-	[V4L2_MEMORY_MMAP]    = "mmap",
-	[V4L2_MEMORY_USERPTR] = "userptr",
-	[V4L2_MEMORY_OVERLAY] = "overlay",
-	[V4L2_MEMORY_DMABUF] = "dmabuf",
-};
-
-void v4l_print_buffer(const void *arg)
-{
-	const struct v4l2_buffer *p = arg;
-	const struct v4l2_timecode *tc = &p->timecode;
-
-	pr_cont("%02ld:%02d:%02d.%08ld index=%d, type=%s, "
-		"flags=0x%08x, field=%s, sequence=%d, memory=%s",
-			p->timestamp.tv_sec / 3600,
-			(int)(p->timestamp.tv_sec / 60) % 60,
-			(int)(p->timestamp.tv_sec % 60),
-			(long)p->timestamp.tv_usec,
-			p->index,
-			prt_names(p->type, v4l2_type_names),
-			p->flags, prt_names(p->field, v4l2_field_names),
-			p->sequence, prt_names(p->memory, v4l2_memory_names));
-
-	if (V4L2_TYPE_IS_MULTIPLANAR(p->type) && p->m.planes) {
-		int i;
-		pr_cont("\n");
-		for (i = 0; i < p->length; ++i) {
-			const struct v4l2_plane *plane = &p->m.planes[i];
-			printk(KERN_DEBUG
-				"plane %d: bytesused=%d, data_offset=0x%08x, "
-				"offset/userptr=0x%lx, length=%d\n",
-				i, plane->bytesused, plane->data_offset,
-				plane->m.userptr, plane->length);
-		}
-	} else {
-		pr_cont(", bytesused=%d, offset/userptr=0x%lx, length=%d\n",
-			p->bytesused, p->m.userptr, p->length);
-	}
-
-	printk(KERN_DEBUG "timecode=%02d:%02d:%02d type=%d, "
-		"flags=0x%08x, frames=%d, userbits=0x%08x\n",
-			tc->hours, tc->minutes, tc->seconds,
-			tc->type, tc->flags, tc->frames, *(__u32 *)tc->userbits);
-}
-
