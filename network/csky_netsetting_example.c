@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 	}
 
 	char *netdev;
-	int sock, i, ret;
+	int sock, ret;
 	char *ip_addr, *netmask_addr, *dst_addr;
 
 	netdev = argv[1];
