@@ -1,8 +1,18 @@
 /*
- * Copyright (C) 2017 C-SKY Microsystems
+ * V4L2 Codec decoding example application
+ * Lu Chongzhi <chongzhi_lu@c-sky.com>
  *
- * SPDX-License-Identifier:     GPL-2.0+
+ * V4L2 print common func
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
+ *
+ * Authors:	Alan Cox, <alan@lxorguk.ukuu.org.uk> (version 1)
+ *              Mauro Carvalho Chehab <mchehab@infradead.org> (version 2)
  */
+
 #ifndef _V4L2_COMMON_H
 #define _V4L2_COMMON_H
 
@@ -21,10 +31,10 @@
 #include <linux/videodev2.h>
 
 enum vb2_memory {
-        VB2_MEMORY_UNKNOWN      = 0,
-        VB2_MEMORY_MMAP         = 1,
-        VB2_MEMORY_USERPTR      = 2,
-        VB2_MEMORY_DMABUF       = 4,
+	VB2_MEMORY_UNKNOWN = 0,
+	VB2_MEMORY_MMAP = 1,
+	VB2_MEMORY_USERPTR = 2,
+	VB2_MEMORY_DMABUF = 4,
 };
 
 /*
@@ -50,7 +60,6 @@ enum vb2_memory {
 /* Current composing area plus all padding pixels */
 #define V4L2_SEL_TGT_COMPOSE_PADDED	0x0103
 
-
 #define V4L2_DEV_COUNT 4
 
 #define V4L2_DEV_NAME_0 "/dev/video0"
@@ -58,9 +67,6 @@ enum vb2_memory {
 #define V4L2_DEV_NAME_2 "/dev/video2"
 #define V4L2_DEV_NAME_3 "/dev/video3"
 
-void v4l_print_querycap(struct v4l2_capability *arg);
-void v4l_print_fmtdesc(const void *arg);
 void v4l_print_format(const void *arg);
-void v4l_print_buffer(const void *arg);
 
 #endif

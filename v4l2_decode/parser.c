@@ -34,15 +34,21 @@ int parse_stream_init(struct mfc_parser_context *ctx)
 	return 0;
 }
 
-int parse_mpeg4_stream(
-	INOUT	struct mfc_parser_context *ctx,
-	IN	char* in,
-	IN	int in_size,
-	IN	char* out,	/* pointer of out buffer */
-	IN	int out_size,	/* out buffer size */
-	INOUT	int *consumed,	/* All bytes consumed from media file head */
-	int *frame_size,	/* Frame output size */
-	char get_head)
+/**
+  \brief         parse mpeg4 stream
+  \param[inout]  ctx parser context
+  \param[in]     in input buffer
+  \param[in]     in_size input buffer size
+  \param[in]     out_pointer of out buffer
+  \param[in]     out_size out buffer size
+  \param[out]    consumed All bytes consumed from media file head
+  \param[out]    frame_size Frame output size
+  \param[in]     get_head when equal to 1 it is used to extract the stream header
+  \retval        1 - if a complete frame has been extracted, 0 otherwise
+  */
+int parse_mpeg4_stream(INOUT struct mfc_parser_context *ctx, IN char *in,
+		       IN int in_size, IN char *out, IN int out_size,
+		       INOUT int *consumed, int *frame_size, char get_head)
 {
 	char *in_orig;
 	char tmp;
@@ -83,7 +89,8 @@ int parse_mpeg4_stream(
 					ctx->headers_count++;
 					ctx->short_header = 1;
 				} else if (!ctx->seek_end ||
-					(ctx->seek_end && ctx->short_header)) {
+					   (ctx->seek_end
+					    && ctx->short_header)) {
 					ctx->last_tag = MPEG4_TAG_VOP;
 					ctx->main_count++;
 					ctx->short_header = 1;
@@ -97,8 +104,8 @@ int parse_mpeg4_stream(
 		case MPEG4_PARSER_CODE_1x1:
 			tmp = *in & 0xF0;
 			if (tmp == 0x00 || tmp == 0x01 || tmp == 0x20 ||
-				*in == 0xb0 || *in == 0xb2 || *in == 0xb3 ||
-				*in == 0xb5) {
+			    *in == 0xb0 || *in == 0xb2 || *in == 0xb3 ||
+			    *in == 0xb5) {
 				ctx->state = MPEG4_PARSER_NO_CODE;
 				ctx->last_tag = MPEG4_TAG_HEAD;
 				ctx->headers_count++;
@@ -111,18 +118,21 @@ int parse_mpeg4_stream(
 			break;
 		}
 
-		if (get_head == 1 && ctx->headers_count >= 1 && ctx->main_count == 1) {
+		if (get_head == 1 && ctx->headers_count >= 1
+		    && ctx->main_count == 1) {
 			ctx->code_end = ctx->tmp_code_start;
 			ctx->got_end = 1;
 			break;
 		}
 
-		if (ctx->got_start == 0 && ctx->headers_count == 1 && ctx->main_count == 0) {
+		if (ctx->got_start == 0 && ctx->headers_count == 1
+		    && ctx->main_count == 0) {
 			ctx->code_start = ctx->tmp_code_start;
 			ctx->got_start = 1;
 		}
 
-		if (ctx->got_start == 0 && ctx->headers_count == 0 && ctx->main_count == 1) {
+		if (ctx->got_start == 0 && ctx->headers_count == 0
+		    && ctx->main_count == 1) {
 			ctx->code_start = ctx->tmp_code_start;
 			ctx->got_start = 1;
 			ctx->seek_end = 1;
@@ -130,13 +140,15 @@ int parse_mpeg4_stream(
 			ctx->main_count = 0;
 		}
 
-		if (ctx->seek_end == 0 && ctx->headers_count > 0 && ctx->main_count == 1) {
+		if (ctx->seek_end == 0 && ctx->headers_count > 0
+		    && ctx->main_count == 1) {
 			ctx->seek_end = 1;
 			ctx->headers_count = 0;
 			ctx->main_count = 0;
 		}
 
-		if (ctx->seek_end == 1 && (ctx->headers_count > 0 || ctx->main_count > 0)) {
+		if (ctx->seek_end == 1
+		    && (ctx->headers_count > 0 || ctx->main_count > 0)) {
 			ctx->code_end = ctx->tmp_code_start;
 			ctx->got_end = 1;
 			if (ctx->headers_count == 0)
@@ -150,14 +162,12 @@ int parse_mpeg4_stream(
 		(*consumed)++;
 	}
 
-
 	*frame_size = 0;
 
 	if (ctx->got_end == 1) {
 		frame_length = ctx->code_end;
 	} else
 		frame_length = *consumed;
-
 
 	if (ctx->code_start >= 0) {
 		frame_length -= ctx->code_start;
@@ -197,7 +207,8 @@ int parse_mpeg4_stream(
 				 * we shall save this information, otherwise
 				 * it is necessary to clear it */
 			}
-			memcpy(ctx->bytes, in_orig + ctx->code_end, *consumed - ctx->code_end);
+			memcpy(ctx->bytes, in_orig + ctx->code_end,
+			       *consumed - ctx->code_end);
 		} else {
 			ctx->code_start = 0;
 			frame_finished = 0;
@@ -209,10 +220,9 @@ int parse_mpeg4_stream(
 	return frame_finished;
 }
 
-int parse_h264_stream(
-	struct mfc_parser_context *ctx,
-	char* in, int in_size, char* out, int out_size,
-	int *consumed, int *frame_size, char get_head)
+int parse_h264_stream(struct mfc_parser_context *ctx,
+		      char *in, int in_size, char *out, int out_size,
+		      int *consumed, int *frame_size, char get_head)
 {
 	char *in_orig;
 	char tmp;
@@ -265,8 +275,7 @@ int parse_h264_stream(
 				ctx->state = H264_PARSER_NO_CODE;
 				ctx->last_tag = H264_TAG_HEAD;
 				ctx->headers_count++;
-			}
-			else
+			} else
 				ctx->state = H264_PARSER_NO_CODE;
 			break;
 		case H264_PARSER_CODE_SLICE:
@@ -278,18 +287,21 @@ int parse_h264_stream(
 			break;
 		}
 
-		if (get_head == 1 && ctx->headers_count >= 1 && ctx->main_count == 1) {
+		if (get_head == 1 && ctx->headers_count >= 1
+		    && ctx->main_count == 1) {
 			ctx->code_end = ctx->tmp_code_start;
 			ctx->got_end = 1;
 			break;
 		}
 
-		if (ctx->got_start == 0 && ctx->headers_count == 1 && ctx->main_count == 0) {
+		if (ctx->got_start == 0 && ctx->headers_count == 1
+		    && ctx->main_count == 0) {
 			ctx->code_start = ctx->tmp_code_start;
 			ctx->got_start = 1;
 		}
 
-		if (ctx->got_start == 0 && ctx->headers_count == 0 && ctx->main_count == 1) {
+		if (ctx->got_start == 0 && ctx->headers_count == 0
+		    && ctx->main_count == 1) {
 			ctx->code_start = ctx->tmp_code_start;
 			ctx->got_start = 1;
 			ctx->seek_end = 1;
@@ -297,13 +309,15 @@ int parse_h264_stream(
 			ctx->main_count = 0;
 		}
 
-		if (ctx->seek_end == 0 && ctx->headers_count > 0 && ctx->main_count == 1) {
+		if (ctx->seek_end == 0 && ctx->headers_count > 0
+		    && ctx->main_count == 1) {
 			ctx->seek_end = 1;
 			ctx->headers_count = 0;
 			ctx->main_count = 0;
 		}
 
-		if (ctx->seek_end == 1 && (ctx->headers_count > 0 || ctx->main_count > 0)) {
+		if (ctx->seek_end == 1
+		    && (ctx->headers_count > 0 || ctx->main_count > 0)) {
 			ctx->code_end = ctx->tmp_code_start;
 			ctx->got_end = 1;
 			if (ctx->headers_count == 0)
@@ -317,14 +331,12 @@ int parse_h264_stream(
 		(*consumed)++;
 	}
 
-
 	*frame_size = 0;
 
 	if (ctx->got_end == 1) {
 		frame_length = ctx->code_end;
 	} else
 		frame_length = *consumed;
-
 
 	if (ctx->code_start >= 0) {
 		frame_length -= ctx->code_start;
@@ -359,7 +371,8 @@ int parse_h264_stream(
 				ctx->main_count = 0;
 				ctx->headers_count = 1;
 			}
-			memcpy(ctx->bytes, in_orig + ctx->code_end, *consumed - ctx->code_end);
+			memcpy(ctx->bytes, in_orig + ctx->code_end,
+			       *consumed - ctx->code_end);
 		} else {
 			ctx->code_start = 0;
 			frame_finished = 0;
@@ -371,10 +384,9 @@ int parse_h264_stream(
 	return frame_finished;
 }
 
-int parse_mpeg2_stream(
-	struct mfc_parser_context *ctx,
-	char* in, int in_size, char* out, int out_size,
-	int *consumed, int *frame_size, char get_head)
+int parse_mpeg2_stream(struct mfc_parser_context *ctx,
+		       char *in, int in_size, char *out, int out_size,
+		       int *consumed, int *frame_size, char get_head)
 {
 	char *in_orig;
 	char frame_finished;
@@ -416,29 +428,34 @@ int parse_mpeg2_stream(
 				ctx->state = MPEG4_PARSER_NO_CODE;
 				ctx->last_tag = MPEG4_TAG_HEAD;
 				ctx->headers_count++;
-				dbg("Found header at %d (%x)", *consumed, *consumed);
+				dbg("Found header at %d (%x)", *consumed,
+				    *consumed);
 			} else if (*in == 0x00) {
 				ctx->state = MPEG4_PARSER_NO_CODE;
 				ctx->last_tag = MPEG4_TAG_VOP;
 				ctx->main_count++;
-				dbg("Found picture at %d (%x)", *consumed, *consumed);
+				dbg("Found picture at %d (%x)", *consumed,
+				    *consumed);
 			} else
 				ctx->state = MPEG4_PARSER_NO_CODE;
 			break;
 		}
 
-		if (get_head == 1 && ctx->headers_count >= 1 && ctx->main_count == 1) {
+		if (get_head == 1 && ctx->headers_count >= 1
+		    && ctx->main_count == 1) {
 			ctx->code_end = ctx->tmp_code_start;
 			ctx->got_end = 1;
 			break;
 		}
 
-		if (ctx->got_start == 0 && ctx->headers_count == 1 && ctx->main_count == 0) {
+		if (ctx->got_start == 0 && ctx->headers_count == 1
+		    && ctx->main_count == 0) {
 			ctx->code_start = ctx->tmp_code_start;
 			ctx->got_start = 1;
 		}
 
-		if (ctx->got_start == 0 && ctx->headers_count == 0 && ctx->main_count == 1) {
+		if (ctx->got_start == 0 && ctx->headers_count == 0
+		    && ctx->main_count == 1) {
 			ctx->code_start = ctx->tmp_code_start;
 			ctx->got_start = 1;
 			ctx->seek_end = 1;
@@ -446,13 +463,15 @@ int parse_mpeg2_stream(
 			ctx->main_count = 0;
 		}
 
-		if (ctx->seek_end == 0 && ctx->headers_count > 0 && ctx->main_count == 1) {
+		if (ctx->seek_end == 0 && ctx->headers_count > 0
+		    && ctx->main_count == 1) {
 			ctx->seek_end = 1;
 			ctx->headers_count = 0;
 			ctx->main_count = 0;
 		}
 
-		if (ctx->seek_end == 1 && (ctx->headers_count > 0 || ctx->main_count > 0)) {
+		if (ctx->seek_end == 1
+		    && (ctx->headers_count > 0 || ctx->main_count > 0)) {
 			ctx->code_end = ctx->tmp_code_start;
 			ctx->got_end = 1;
 			if (ctx->headers_count == 0)
@@ -472,7 +491,6 @@ int parse_mpeg2_stream(
 		frame_length = ctx->code_end;
 	} else
 		frame_length = *consumed;
-
 
 	if (ctx->code_start >= 0) {
 		frame_length -= ctx->code_start;
@@ -508,7 +526,8 @@ int parse_mpeg2_stream(
 				ctx->main_count = 0;
 				ctx->headers_count = 1;
 			}
-			memcpy(ctx->bytes, in_orig + ctx->code_end, *consumed - ctx->code_end);
+			memcpy(ctx->bytes, in_orig + ctx->code_end,
+			       *consumed - ctx->code_end);
 		} else {
 			ctx->code_start = 0;
 			frame_finished = 0;
@@ -519,4 +538,3 @@ int parse_mpeg2_stream(
 
 	return frame_finished;
 }
-

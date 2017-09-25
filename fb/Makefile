@@ -1,5 +1,3 @@
-# SPI flash read/write example application
-# Lu Chongzhi <chongzhi_lu@c-sky.com>
 #
 # Copyright 2017 C-SKY Microsystems Co., Ltd.
 #
@@ -16,14 +14,13 @@
 # limitations under the License.
 #
 
-TCPATH = csky-abiv2-linux-
-CC = ${TCPATH}gcc
+include ../Makefile.param
 
-SOURCES = main.c args.c common.c spi_flash.c
+SOURCES = csky_fb_example.c
 
 OBJECTS := $(SOURCES:.c=.o)
-EXEC = spi_flash
-CFLAGS = -O0 -Wall -g -lm
+EXEC = $(DST_DIR)/csky_fb_example
+CFLAGS += -O2
 
 all: $(EXEC)
 
@@ -31,7 +28,7 @@ all: $(EXEC)
 	$(CC) -c $(CFLAGS) $(INCLUDES) $<
 
 $(EXEC): $(OBJECTS)
-	$(CC) $(CFLAGS) -o $(EXEC) $(OBJECTS) -pthread
+	$(CC) $(CFLAGS) -o $(EXEC) $(OBJECTS)
 
 clean:
 	rm -f *.o $(EXEC)

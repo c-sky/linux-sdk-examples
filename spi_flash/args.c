@@ -20,8 +20,13 @@
  */
 #include "common.h"
 
+#define CSKY_SPI_FLASH_MAJOR_NUM (1)
+#define CSKY_SPI_FLASH_MINOR_NUM (0)
+
 void print_usage(char *name)
 {
+	printf("version: %d.%d\n", CSKY_SPI_FLASH_MAJOR_NUM,
+	       CSKY_SPI_FLASH_MINOR_NUM);
 	printf("Usage:\n");
 	printf("\t%s\n", name);
 	printf("\t-d <device>  - SPI flash device (e.g. /dev/mtd0)\n");
@@ -94,4 +99,3 @@ int parse_args(struct instance *inst, int argc, char **argv)
 
 	return 0;
 }
-

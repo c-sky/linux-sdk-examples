@@ -80,16 +80,15 @@ int parse_stream_init(struct mfc_parser_context *ctx);
  * Return value: 1 - if a complete frame has been extracted, 0 otherwise
  */
 int parse_mpeg4_stream(struct mfc_parser_context *ctx,
-        char* in, int in_size, char* out, int out_size,
-        int *consumed, int *frame_size, char get_head);
+		       char *in, int in_size, char *out, int out_size,
+		       int *consumed, int *frame_size, char get_head);
 
 int parse_h264_stream(struct mfc_parser_context *ctx,
-        char* in, int in_size, char* out, int out_size,
-        int *consumed, int *frame_size, char get_head);
+		      char *in, int in_size, char *out, int out_size,
+		      int *consumed, int *frame_size, char get_head);
 
 int parse_mpeg2_stream(struct mfc_parser_context *ctx,
-        char* in, int in_size, char* out, int out_size,
-        int *consumed, int *frame_size, char get_head);
+		       char *in, int in_size, char *out, int out_size,
+		       int *consumed, int *frame_size, char get_head);
 
 #endif /* PARSER_H_ */
-

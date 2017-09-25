@@ -27,10 +27,8 @@
 int get_mtdinfo(struct instance *inst);
 int print_mtdinfo(struct instance *inst);
 
-int flash_init(struct instance *inst);
 int flash_read(struct instance *inst);
 int flash_write(struct instance *inst);
 int flash_erase(struct instance *inst);
 
 #endif /* SPI_FLASH_H */
-

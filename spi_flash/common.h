@@ -40,8 +40,6 @@
 
 #include <mtd/mtd-user.h>
 
-
-
 typedef int bool;
 #ifndef true
 #define true 1
@@ -52,7 +50,7 @@ typedef int bool;
 #endif
 
 extern char g_scan_char;
-#define DEBUG_SCAN_STEP //dbg("press any key to continue:");scanf("%c", &g_scan_char);
+#define DEBUG_SCAN_STEP		//dbg("press any key to continue:");scanf("%c", &g_scan_char);
 
 /* When ADD_DETAILS is defined every debug and error message contains
  * information about the file, function and line of code where it has
@@ -105,8 +103,8 @@ struct instance {
 	char *file_name;	// e.g. "/tmp/spiflash.hex"
 
 	/* Internal args */
-	int  dev_fd;
-	int  file_fd;
+	int dev_fd;
+	int file_fd;
 	struct mtd_info_user mtd_info;
 };
 
@@ -119,4 +117,3 @@ void print_usage(char *name);
 int parse_args(struct instance *i, int argc, char **argv);
 
 #endif /* INCLUDE_COMMON_H */
-

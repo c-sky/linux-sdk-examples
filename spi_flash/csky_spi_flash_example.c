@@ -23,7 +23,7 @@
 #include "spi_flash.h"
 
 char g_scan_char;
-#define DEBUG_SCAN_STEP //dbg("press any key to continue:");scanf("%c", &g_scan_char);
+#define DEBUG_SCAN_STEP		//dbg("press any key to continue:");scanf("%c", &g_scan_char);
 
 void init_to_defaults(struct instance *inst)
 {
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 	int ret = -1;
 	struct instance inst;
 
-	if (argc==1 || parse_args(&inst, argc, argv)) {
+	if (argc == 1 || parse_args(&inst, argc, argv)) {
 		print_usage(argv[0]);
 		goto EXIT;
 	}
@@ -45,8 +45,7 @@ int main(int argc, char **argv)
 	inst.dev_fd = open(inst.dev_name, O_RDWR);
 	if (inst.dev_fd >= 0) {
 		printf("Device '%s' exists and open OK.\n", inst.dev_name);
-	}
-	else {
+	} else {
 		err("Can't open device: '%s'", inst.dev_name);
 		goto EXIT;
 	}
@@ -89,4 +88,3 @@ EXIT:
 
 	return ret;
 }
-

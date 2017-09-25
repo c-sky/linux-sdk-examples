@@ -26,9 +26,8 @@
 #include "common.h"
 
 /* Open and mmap the input file */
-int	input_open(struct instance *i, char *name);
+int input_open(struct instance *i, char *name);
 /* Unmap and close the input file */
-void	input_close(struct instance *i);
+void input_close(struct instance *i);
 
 #endif /* INCLUDE_FILEOPS_H */
-

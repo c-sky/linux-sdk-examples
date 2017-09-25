@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <linux/fb.h>
 
-
 #define CSKY_FBIO_BASE	0x30
 #define CSKY_FBIO_SET_PIXEL_FMT	_IOW('F', CSKY_FBIO_BASE+0, \
 					enum csky_fb_pixel_format)
@@ -41,9 +40,9 @@ enum csky_fb_pixel_format {
 };
 
 struct csky_fb_lcd_pbase_yuv {
-	unsigned int y; /* LCD_PBASE_Y */
-	unsigned int u; /* LCD_PBASE_U */
-	unsigned int v; /* LCD_PBASE_V */
+	unsigned int y;		/* LCD_PBASE_Y */
+	unsigned int u;		/* LCD_PBASE_U */
+	unsigned int v;		/* LCD_PBASE_V */
 };
 
 struct csky_fb_test_info {
@@ -69,4 +68,3 @@ int fb_power_on(struct instance *i);
 int fb_wait_for_vsync(struct instance *i);
 
 #endif /* __CSKY_FB_TEST_H__ */
-

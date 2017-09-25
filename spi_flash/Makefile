@@ -1,4 +1,4 @@
-# V4L2 Codec decoding example application
+# SPI flash read/write example application
 # Lu Chongzhi <chongzhi_lu@c-sky.com>
 #
 # Copyright 2017 C-SKY Microsystems Co., Ltd.
@@ -18,11 +18,10 @@
 
 include ../Makefile.param
 
-SOURCES = csky_v4l2_decode_example.c fileops.c args.c parser.c mfc.c
-SOURCES += v4l2_common.c fb.c
+SOURCES = csky_spi_flash_example.c args.c common.c spi_flash.c
 
 OBJECTS := $(SOURCES:.c=.o)
-EXEC = $(DST_DIR)/csky_v4l2_decode_example
+EXEC = $(DST_DIR)/csky_spi_flash_example
 CFLAGS = -O0 -Wall -g -lm
 
 all: $(EXEC)
