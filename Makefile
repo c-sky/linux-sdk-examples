@@ -16,22 +16,29 @@
 
 SUBDIRS := 	watchdog \
 		fb \
-		ffmpeg_audio_player \
-		ffmpeg_media_player \
 		spi_flash \
-		v4l2_decode ffmpeg_media_player \
+		v4l2_decode \
 		storage \
 		timer \
 		pwm \
 		network \
 		rtc \
-		v4l2_decode \
+		v4l2_decode
+
+ifeq ($(BR2_PACKAGE_LIBSNDFILE),y)
+SUBDIRS +=	iis
+endif
+
+ifeq ($(BR2_PACKAGE_FFMPEG),y)
+SUBDIRS +=	ffmpeg_audio_player \
+		ffmpeg_media_player \
 		ffmpeg_decode_audio \
-		ffmpeg_demuxing \
-		iis
+		ffmpeg_demuxing
+endif
 
 all: $(SUBDIRS)
 $(SUBDIRS):
+	echo $(BR2_PACKAGE_FFMPEG)
 	$(MAKE) -C $@
 
 clean:
