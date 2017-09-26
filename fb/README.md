@@ -32,7 +32,7 @@ Where path = framebuffer device name, e.g. /dev/fb0
 
 ## 1. Check usage
 
-$ ./csky_fb_test /dev/fb0
+$ ./csky_fb_example /dev/fb0
 
 ## 1. Example Output
 
@@ -57,7 +57,7 @@ Input Your Choice:
 
 ## 2. Display YUV image
 
-$ ./csky_spi_flash_example /dev/fb0
+$ ./csky_fb_example /dev/fb0
 $ Input Y
 
 ## 2. Example Output
@@ -66,7 +66,7 @@ Check the image on the screen.
 
 ## 3. display rectangle in RGB mode
 
-$ ./csky_spi_flash_example /dev/fb0
+$ ./csky_fb_example /dev/fb0
 $ Input R
 
 ## 3. Example Output
