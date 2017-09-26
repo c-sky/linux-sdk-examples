@@ -23,7 +23,8 @@ SUBDIRS := 	watchdog \
 		pwm \
 		network \
 		rtc \
-		v4l2_decode
+		v4l2_decode \
+		uart
 
 ifeq ($(BR2_PACKAGE_LIBSNDFILE),y)
 SUBDIRS +=	iis
