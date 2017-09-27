@@ -31,7 +31,7 @@ The demo tests the following iis function:
 
 ```
 csky_iis_example 1.0
-Usage: csky_iis_example show/play file [volume] 
+Usage: csky_iis_example show/play file [volume]
 show: it will show the wave file information
 play: it will play the wave file as a media player
 file: {string} A media file in wave format.
@@ -49,7 +49,7 @@ $ csky_iis_example
 
 ```
 csky_iis_example 1.0
-Usage: csky_iis_example show/play file [volume] 
+Usage: csky_iis_example show/play file [volume]
 show: it will show the wave file information
 play: it will play the wave file as a media player
 file: {string} A media file in wave format.

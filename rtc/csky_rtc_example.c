@@ -253,7 +253,7 @@ int check_datetime(const char *datetime, struct rtc_time *time)
   \brief       time intervals between two time value
   \param[in]   time0    bigger time;
   \param[in]   time1    smaller time;
-  \return  time interval( in seconds) 
+  \return  time interval( in seconds)
   */
 int compare_datetime(struct rtc_time time0, struct rtc_time time1)
 {
