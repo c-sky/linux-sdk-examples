@@ -106,7 +106,7 @@ void play_wav_file(const char *file, pcm_params_t * wav_param, int volume)
 {
 
 	int dir, size;
-	int ret, rc;
+	int ret;
 	snd_pcm_t *handle;
 	snd_pcm_uframes_t frames;
 	long long duration;
