@@ -297,7 +297,7 @@ int test_display_yuv_image(void)
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
 
 	/* read image data into framebuffer */
-	size = load_file(info.ptr, "./yuvtest420.img");
+	size = load_file(info.ptr, "./yuv420_800x480.yuv");
 	if (size > 0) {
 		/* set pixel format to yuv420 */
 		pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
@@ -330,7 +330,7 @@ int test_display_yuv_image2(void)
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
 
 	/* read image data into framebuffer */
-	size = load_file(info.ptr, "./yuvtest420.img");
+	size = load_file(info.ptr, "./yuv420_800x480.yuv");
 	if (size > 0) {
 		/* set pixel format to yuv420 */
 		pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
@@ -347,7 +347,7 @@ int test_display_yuv_image2(void)
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
 
 	load_file((void *)((unsigned int)info.ptr + size),
-		  "./yuvtest420_2.img");
+		  "./yuv420_800x480_2.yuv");
 
 	for (i = 0; i < 30; i++) {
 		/* frame 1 */
