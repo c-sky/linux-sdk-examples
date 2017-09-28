@@ -34,17 +34,30 @@
 #define TEST_LCDC_RESET
 
 static enum csky_fb_pixel_format s_pixel_fmt;
+static const char *pwm_on_state = "7";
+static const char *pwm_down_state = "0";
 
 int fb_open(struct instance *i, char *name)
 {
 	struct fb_var_screeninfo fbinfo;
-	int ret;
+	int ret, pwm;
+	enum csky_fb_out_mode out_mode;
+	char *pwm_state;
+
+	pwm = open("/sys/class/backlight/soc:backlight/brightness", O_RDWR);
+	if (pwm < 0)
+		printf("ERROR: open pwm Failed\n");
 
 	i->fb.fd = open(name, O_RDWR);
 	if (i->fb.fd < 0) {
 		err("Failed to open frame buffer: %s", name);
 		return -1;
 	}
+
+	out_mode = i->is_hdmi ? CSKY_FB_OUT_HDMI_MODE : CSKY_FB_OUT_LCD_MODE;
+	pwm_state = (char *)(i->is_hdmi ? pwm_down_state : pwm_on_state);
+	write(pwm, pwm_state, 1);
+	ioctl(i->fb.fd, CSKY_FBIO_SET_OUT_MODE, &out_mode);
 
 	ret = ioctl(i->fb.fd, FBIOGET_VSCREENINFO, &fbinfo);
 	if (ret != 0) {

@@ -49,7 +49,6 @@ void print_usage(char *name)
 	printf("\t-V - synchronise to vsync\n");
 	//printf("\t- <device> - \n");
 	printf("\t-r <file> - Record file name (e.g. ./video.yuv)\n");
-	printf("\tp2\n");
 	printf("\n");
 }
 

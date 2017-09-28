@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <semaphore.h>
 
 #include "parser.h"
@@ -170,7 +171,7 @@ struct instance {
 	int finish;		/* Flag set when decoding has been completed and all
 				   threads finish */
 	int decoded_cnt;	/* Total decoded frames count */
-
+	bool is_hdmi;
 	PlayerState *ps;
 };
 
