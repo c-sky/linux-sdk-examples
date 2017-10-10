@@ -61,15 +61,8 @@ struct csky_fb_test_info {
 };
 
 #define MENU_EXIT		"Q"
-#define MENU_LCDC_ENABLE	"L"
-#define MENU_SET_PIXEL_FORMAT	"F"
-#define MENU_GET_PIXEL_FORMAT	"G"
-#define MENU_WAIT_FOR_VSYNC	"V"
-#define MENU_PAN_DISPLAY	"P"
 #define MENU_DISPLAY_YUV_IMG	"Y"
 #define MENU_DISPLAY_HDMI_YUV_IMG "H"
-#define MENU_DISPLAY_YUV_IMG2	"Y2"
 #define MENU_DISPLAY_RECT_IMG	"R"
-#define MENU_STRESS_TEST	"ST"
 
 #endif /* __CSKY_FB_TEST_H__ */

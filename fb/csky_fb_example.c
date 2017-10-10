@@ -43,8 +43,6 @@ static const char *pwm_off_state = "0";
 #endif
 static char action[MAX_PATH];
 
-static int frame_num = 1;
-
 static int load_file(void *ptr, char *path);
 
 #define CSKY_FB_MAJOR_NUM (1)
@@ -77,160 +75,13 @@ void show_menu(void)
 {
 	printf("\n---------- main menu ----------\n");
 	printf("%s - exit\n", MENU_EXIT);
-	printf("%s - enable/disable LCDC\n", MENU_LCDC_ENABLE);
-	printf("%s - set pixel format\n", MENU_SET_PIXEL_FORMAT);
-	printf("%s - get pixel format\n", MENU_GET_PIXEL_FORMAT);
-	printf("%s - wait for VSYNC\n", MENU_WAIT_FOR_VSYNC);
-	printf("%s - pan display(RGB only)\n", MENU_PAN_DISPLAY);
+	printf("%s - display red rectangle(RGB only)\n", MENU_DISPLAY_RECT_IMG);
 	printf("%s - display YUV image(YUV420 only)\n", MENU_DISPLAY_YUV_IMG);
 	printf("%s - display image via HDMI(YUV420 only)\n",
 	       MENU_DISPLAY_HDMI_YUV_IMG);
-	printf("%s - display YUV image(2 frame)\n", MENU_DISPLAY_YUV_IMG2);
-	printf("%s - display rectangle(RGB only)\n", MENU_DISPLAY_RECT_IMG);
-	printf("%s - Stress Test\n", MENU_STRESS_TEST);
 	printf("-------------------------------\n");
 	printf("Input Your Choice: ");
 	return;
-}
-
-int test_lcdc_enable(void)
-{
-	char choice[MAX_PATH] = { 0 };
-	int tmp;
-
-	while (1) {
-		printf("\n--- enable/disable LCDC ---\n");
-		printf("e - enable lcdc\n");
-		printf("d - disable lcdc\n");
-		printf("q - quit\n");
-		printf("Input Your Choice: ");
-
-		get_first_str(choice);
-
-		if (strcasecmp(choice, "q") == 0)
-			break;
-		else if (strcasecmp(choice, "e") == 0) {
-			printf("enable lcdc\n");
-			ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
-		} else if (strcasecmp(choice, "d") == 0) {
-			printf("disable lcdc\n");
-			ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-			ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
-		} else
-			printf("invalid input\n");
-	}
-
-	return 0;
-}
-
-int test_set_pixel_format(void)
-{
-	enum csky_fb_pixel_format pixel_fmt;
-	enum csky_fb_out_mode out_mode;
-	char choice[MAX_PATH] = {0};
-	int tmp;
-
-	while (1) {
-		printf("\n--- set pixel format ---\n");
-		printf("0 - RGB\n");
-		printf("1 - YUV444\n");
-		printf("2 - YUV422\n");
-		printf("3 - YUV420\n");
-		printf("q - quit\n");
-		printf("Input Your Choice: ");
-
-		get_first_str(choice);
-
-		if (strcasecmp(choice, "q") == 0)
-			break;
-		else if (strcasecmp(choice, "0") == 0)
-			pixel_fmt = CSKY_LCDCON_DFS_RGB;
-		else if (strcasecmp(choice, "1") == 0)
-			pixel_fmt = CSKY_LCDCON_DFS_YUV444;
-		else if (strcasecmp(choice, "2") == 0)
-			pixel_fmt = CSKY_LCDCON_DFS_YUV422;
-		else if (strcasecmp(choice, "3") == 0)
-			pixel_fmt = CSKY_LCDCON_DFS_YUV420;
-		else
-			printf("invalid input\n");
-
-		/* reset lcdc */
-		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-		ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
-
-		/* open LCD backlight */
-		write(pwm, pwm_on_state, 1);
-
-		/* set out mode to LCD */
-		out_mode = CSKY_FB_OUT_LCD_MODE;
-		ioctl(info.fd, CSKY_FBIO_SET_OUT_MODE, &out_mode);
-		/* get var again. var is changed */
-		if (ioctl(info.fd, FBIOGET_VSCREENINFO, &info.var)) {
-			printf("ERROR: FBIOGET_VSCREENINFO Failed\n");
-			close(info.fd);
-			return -1;
-		}
-
-		/* set pixel format */
-		ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt);
-		/* init lcdc */
-		ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
-	}
-
-	return 0;
-}
-
-int test_get_pixel_format(void)
-{
-	enum csky_fb_pixel_format pixel_fmt;
-
-	ioctl(info.fd, CSKY_FBIO_GET_PIXEL_FMT, &pixel_fmt);
-
-	printf("pixel format: ");
-	switch (pixel_fmt) {
-	case CSKY_FB_PIXEL_FMT_RGB:
-		printf("RGB\n");
-		break;
-	case CSKY_FB_PIXEL_FMT_YUV444:
-		printf("YUV444\n");
-		break;
-	case CSKY_FB_PIXEL_FMT_YUV422:
-		printf("YUV422\n");
-		break;
-	case CSKY_FB_PIXEL_FMT_YUV420:
-		printf("YUV420\n");
-		break;
-	default:
-		printf("\n");
-	}
-
-	return pixel_fmt;
-}
-
-int test_wait_for_vsync(void)
-{
-	int tmp;
-	char buf[MAX_PATH] = { 0 };
-	int count;
-	int i;
-
-	printf("\n--- wait for VSYNC (at most COUNT times) ---\n");
-	printf("Input the value of COUNT: ");
-
-	if (get_first_str(buf) == NULL)
-		return -1;
-
-	count = atoi(buf);
-	printf("COUNT = %d\n", count);
-
-	for (i = 0; i < count; i++) {
-		if (ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp)) {
-			printf("ERROR: FBIO_WAITFORVSYNC Failed\n");
-			return -1;
-		}
-		printf("V\n");
-	}
-	return 0;
 }
 
 #define COLOR_RED	0x00ff0000
@@ -253,71 +104,6 @@ void set_screen_color_32bpp(void *ptr, unsigned int color)
 			    color;
 
 	return;
-}
-
-int test_pan_display(void)
-{
-	int tmp;
-	char choice[MAX_PATH] = { 0 };
-	int size = info.fix.line_length * info.var.yres;
-	enum csky_fb_out_mode out_mode;
-	enum csky_fb_pixel_format pixel_fmt = CSKY_LCDCON_DFS_RGB;
-
-	/* reset lcdc */
-	ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-	ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
-
-	/* open LCD backlight */
-	write(pwm, pwm_on_state, 1);
-
-	/* set out mode to LCD */
-	out_mode = CSKY_FB_OUT_LCD_MODE;
-	ioctl(info.fd, CSKY_FBIO_SET_OUT_MODE, &out_mode);
-	/* get var again. var is changed */
-	if (ioctl(info.fd, FBIOGET_VSCREENINFO, &info.var)) {
-		printf("ERROR: FBIOGET_VSCREENINFO Failed\n");
-		close(info.fd);
-		return -1;
-	}
-
-	/* set pixel format */
-	ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt);
-
-	set_screen_color_32bpp(info.ptr, COLOR_RED);
-	set_screen_color_32bpp((void *)((unsigned int)info.ptr + size),
-			       COLOR_BLUE);
-
-	/* init lcdc */
-	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
-
-	while (1) {
-		printf("\n--- pan display ---\n");
-		printf("1 - show frame #1\n");
-		printf("2 - show frame #2\n");
-		printf("q - quit\n");
-		printf("Input Your Choice: ");
-
-		get_first_str(choice);
-
-		if (strcasecmp(choice, "q") == 0)
-			break;
-		else if (strcasecmp(choice, "1") == 0) {
-			printf("frame1\n");
-			info.var.yoffset = 0;
-			//ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-			ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
-			frame_num = 1;
-		} else if (strcasecmp(choice, "2") == 0) {
-			printf("frame2\n");
-			info.var.yoffset = info.var.yres;
-			//ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-			ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
-			frame_num = 2;
-		} else
-			printf("invalid input\n");
-	}
-
-	return 0;
 }
 
 int test_display_yuv_image(enum csky_fb_out_mode out_mode)
@@ -367,71 +153,6 @@ int test_display_yuv_image(enum csky_fb_out_mode out_mode)
 	return 0;
 }
 
-int test_display_yuv_image2(void)
-{
-	enum csky_fb_pixel_format pixel_fmt_new;
-	enum csky_fb_out_mode out_mode;
-	unsigned long base = info.fix.smem_start;
-	struct csky_fb_lcd_pbase_yuv base_yuv;
-	int tmp;
-	int size;
-	int i;
-
-	/* reset lcdc */
-	ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-	ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
-
-	/* read image data into framebuffer */
-	size = load_file(info.ptr, "./yuv420_800x480.yuv");
-	if (size > 0) {
-		/* open LCD backlight */
-		write(pwm, pwm_on_state, 1);
-		/* set out mode to LCD */
-		out_mode = CSKY_FB_OUT_LCD_MODE;
-		ioctl(info.fd, CSKY_FBIO_SET_OUT_MODE, &out_mode);
-		/* get var again. var is changed */
-		if (ioctl(info.fd, FBIOGET_VSCREENINFO, &info.var)) {
-			printf("ERROR: FBIOGET_VSCREENINFO Failed\n");
-			close(info.fd);
-			return -1;
-		}
-
-		/* set pixel format to yuv420 */
-		pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
-		ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new);
-
-		/* set y/u/v base address */
-		base_yuv.y = base;
-		base_yuv.u = base_yuv.y + info.var.xres * info.var.yres;
-		base_yuv.v = base_yuv.u + info.var.xres * info.var.yres / 4;
-		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
-	}
-
-	/* init lcdc */
-	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
-
-	load_file((void *)((unsigned int)info.ptr + size),
-		  "./yuv420_800x480_2.yuv");
-
-	for (i = 0; i < 30; i++) {
-		/* frame 1 */
-		base_yuv.y = base;
-		base_yuv.u = base_yuv.y + info.var.xres * info.var.yres;
-		base_yuv.v = base_yuv.u + info.var.xres * info.var.yres / 4;
-		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
-		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-
-		/* frame 2 */
-		base_yuv.y = base + size;
-		base_yuv.u = base_yuv.y + info.var.xres * info.var.yres;
-		base_yuv.v = base_yuv.u + info.var.xres * info.var.yres / 4;
-		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
-		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-	}
-
-	return 0;
-}
-
 int test_display_rectangle_32bpp(void)
 {
 	int tmp;
@@ -464,7 +185,7 @@ int test_display_rectangle_32bpp(void)
 
 	width = info.var.xres;
 	height = info.var.yres;
-	pixel_len = 4;		//32bpp
+	pixel_len = 4; //32bpp
 
 	memset(info.ptr, 0, width * height * pixel_len);
 	j = 0;
@@ -484,44 +205,8 @@ int test_display_rectangle_32bpp(void)
 		*(unsigned int *)((unsigned int)info.ptr +
 				  (j * width + i) * pixel_len) = COLOR_RED;
 
-	if (frame_num == 2) {
-		/* pan display to frame #1 */
-		info.var.yoffset = 0;
-		ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-		ioctl(info.fd, FBIOPAN_DISPLAY, &info.var);
-	}
-
 	/* init lcdc */
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
-	return 0;
-}
-
-int test_stress_test(void)
-{
-	char choice[MAX_PATH] = { 0 };
-
-	while (1) {
-		printf("\n--- Stress Test ---\n");
-		printf("1 - RGB <-> YUV420\n");
-		printf("q - quit\n");
-		printf("Input Your Choice: ");
-
-		get_first_str(choice);
-
-		if (strcasecmp(choice, "q") == 0)
-			break;
-		else if (strcasecmp(choice, "1") == 0) {
-			printf("\ntesting RGB <-> YUV420...\n");
-			while (1) {
-				test_display_yuv_image(CSKY_FB_OUT_LCD_MODE);
-				sleep(1);
-				test_display_rectangle_32bpp();
-				sleep(1);
-			}
-		} else
-			printf("invalid input\n");
-	}
-
 	return 0;
 }
 
@@ -531,26 +216,12 @@ int do_fb_test(char *choice)
 
 	if (strcasecmp(choice, MENU_EXIT) == 0)
 		ret = EXIT_TEST;
-	else if (strcasecmp(choice, MENU_LCDC_ENABLE) == 0)
-		ret = test_lcdc_enable();
-	else if (strcasecmp(choice, MENU_SET_PIXEL_FORMAT) == 0)
-		ret = test_set_pixel_format();
-	else if (strcasecmp(choice, MENU_GET_PIXEL_FORMAT) == 0)
-		ret = test_get_pixel_format();
-	else if (strcasecmp(choice, MENU_WAIT_FOR_VSYNC) == 0)
-		ret = test_wait_for_vsync();
-	else if (strcasecmp(choice, MENU_PAN_DISPLAY) == 0)
-		ret = test_pan_display();
 	else if (strcasecmp(choice, MENU_DISPLAY_YUV_IMG) == 0)
 		ret = test_display_yuv_image(CSKY_FB_OUT_LCD_MODE);
 	else if (strcasecmp(choice, MENU_DISPLAY_HDMI_YUV_IMG) == 0)
 		ret = test_display_yuv_image(CSKY_FB_OUT_HDMI_MODE);
-	else if (strcasecmp(choice, MENU_DISPLAY_YUV_IMG2) == 0)
-		ret = test_display_yuv_image2();
 	else if (strcasecmp(choice, MENU_DISPLAY_RECT_IMG) == 0)
 		ret = test_display_rectangle_32bpp();
-	else if (strcasecmp(choice, MENU_STRESS_TEST) == 0)
-		ret = test_stress_test();
 	else {
 		printf("invalid input\n");
 		ret = 0;
