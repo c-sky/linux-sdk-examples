@@ -23,52 +23,24 @@ The demo tests lcdc basic function.
 # How to use
 
 ```
-version: 1.0
-Usage: csky_fb_example path
-Where path = framebuffer device name, e.g. /dev/fb0
+Usage: csky_fb_example [OPTION]
+  -d                 framebuffer device name (default /dev/fb0)
+  -f                 yuv data from a file (e.g. /media/yuv420_1280x720.yuv)
+  -p --pixel-format  pixel format (rgb or yuv420, default rgb)
+  --hdmi             display image via HDMI
 ```
 
 # Example
 
-## 1. Check usage
+## 1. Display YUV image via LCD
 
-$ ./csky_fb_example /dev/fb0
+$ ./csky_fb_example -d /dev/fb0 -p yuv420 -f /example/media/yuv420_800x480.yuv
 
-## 1. Example Output
+## 2. display rectangle via LCD
 
-```
-csky_fb_test  Sep 19 2017  14:52:32
-fb res 800x480 virtual 800x960, line_len 3200, bpp 32
+$ ./csky_fb_example -d /dev/fb0
 
----------- main menu ----------
-Q - exit
-L - enable/disable LCDC
-F - set pixel format
-G - get pixel format
-V - wait for VSYNC
-P - pan display(RGB only)
-Y - display YUV image(YUV420 only)
-Y2 - display YUV image(2 frame)
-R - display rectangle(RGB only)
-ST - Stress Test
--------------------------------
-Input Your Choice:
-```
+## 3. Display YUV image via HDMI
 
-## 2. Display YUV image
+$ ./csky_fb_example -d /dev/fb0 -p yuv420 -f /example/media/yuv420_1280x720.yuv --hdmi
 
-$ ./csky_fb_example /dev/fb0
-$ Input Y
-
-## 2. Example Output
-
-Check the image on the screen.
-
-## 3. display rectangle in RGB mode
-
-$ ./csky_fb_example /dev/fb0
-$ Input R
-
-## 3. Example Output
-
-Check if red rectangle on the screen.

@@ -58,11 +58,14 @@ struct csky_fb_test_info {
 	struct fb_var_screeninfo var;
 	struct fb_fix_screeninfo fix;
 	void *ptr;
+	char *device_name;
+	char *file_name;
+	enum csky_fb_pixel_format pixel_format;
+	enum csky_fb_out_mode out_mode;
 };
 
-#define MENU_EXIT		"Q"
-#define MENU_DISPLAY_YUV_IMG	"Y"
-#define MENU_DISPLAY_HDMI_YUV_IMG "H"
-#define MENU_DISPLAY_RECT_IMG	"R"
+enum {
+	OPT_HDMI = 1,
+};
 
 #endif /* __CSKY_FB_TEST_H__ */

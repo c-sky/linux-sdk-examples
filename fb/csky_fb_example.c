@@ -20,174 +20,90 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <time.h>
-
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-
 #include <linux/fb.h>
 #include <linux/kd.h>
-
 #include "csky_fb_test.h"
-
-#define EXIT_TEST 0xEEEE
-
-static struct csky_fb_test_info info;
-static int pwm;
-static const char *pwm_on_state = "7";
-static const char *pwm_off_state = "0";
-
-
-#ifndef MAX_PATH
-#define MAX_PATH 256
-#endif
-static char action[MAX_PATH];
-
-static int load_file(void *ptr, char *path);
-
-#define CSKY_FB_MAJOR_NUM (1)
-#define CSKY_FB_MINOR_NUM (0)
-
-/*
- * reads a line from stdin and stores the first word into the buffer @str
- */
-char *get_first_str(char *str)
-{
-	char buf[MAX_PATH] = { 0 };
-
-	if ((fgets(buf, sizeof(buf), stdin) == NULL) && ferror(stdin)) {
-		printf("fgets error\n");
-		return NULL;
-	}
-
-	sscanf(buf, "%s", str);
-	return str;
-}
-
-void show_help(void)
-{
-	printf("version: %d.%d\n", CSKY_FB_MAJOR_NUM, CSKY_FB_MINOR_NUM);
-	printf("Usage: csky_fb_example path\n");
-	printf("Where path = framebuffer device name, e.g. /dev/fb0\n");
-}
-
-void show_menu(void)
-{
-	printf("\n---------- main menu ----------\n");
-	printf("%s - exit\n", MENU_EXIT);
-	printf("%s - display red rectangle(RGB only)\n", MENU_DISPLAY_RECT_IMG);
-	printf("%s - display YUV image(YUV420 only)\n", MENU_DISPLAY_YUV_IMG);
-	printf("%s - display image via HDMI(YUV420 only)\n",
-	       MENU_DISPLAY_HDMI_YUV_IMG);
-	printf("-------------------------------\n");
-	printf("Input Your Choice: ");
-	return;
-}
 
 #define COLOR_RED	0x00ff0000
 #define COLOR_GREEN	0x0000ff00
 #define COLOR_BLUE	0x000000ff
 
-void set_screen_color_32bpp(void *ptr, unsigned int color)
+static struct csky_fb_test_info info;
+
+static int pwm;
+static const char *pwm_on_state = "7";
+static const char *pwm_off_state = "0";
+
+static int load_file(void *ptr, char *path)
 {
-	unsigned int addr = (unsigned int)ptr;
-	unsigned int x, y;
-	unsigned int width, height, pixel_len;
+	int fd;
+	struct stat statbuff;
+	unsigned long size;
 
-	width = info.var.xres;
-	height = info.var.yres;
-	pixel_len = 4;		//32bpp
-
-	for (y = 0; y < height; y++)
-		for (x = 0; x < width; x++)
-			*(unsigned int *)(addr + (y * width + x) * pixel_len) =
-			    color;
-
-	return;
-}
-
-int test_display_yuv_image(enum csky_fb_out_mode out_mode)
-{
-	enum csky_fb_pixel_format pixel_fmt_new;
-	unsigned long base = info.fix.smem_start;
-	struct csky_fb_lcd_pbase_yuv base_yuv;
-	int tmp;
-	int size;
-
-	/* reset lcdc */
-	ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
-	ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
-
-	/* read image data into framebuffer */
-	size = load_file(info.ptr, (out_mode == CSKY_FB_OUT_LCD_MODE) ?
-			 "../../media/yuv420_800x480.yuv" :
-			 "../../media/yuv420_1280x720.yuv");
-	if (size > 0) {
-		/* control LCD backlight */
-		write(pwm, (out_mode == CSKY_FB_OUT_HDMI_MODE) ?
-		      pwm_off_state : pwm_on_state, 1);
-
-		/* set out mode */
-		ioctl(info.fd, CSKY_FBIO_SET_OUT_MODE, &out_mode);
-		/* get var again. var is changed */
-		if (ioctl(info.fd, FBIOGET_VSCREENINFO, &info.var)) {
-			printf("ERROR: FBIOGET_VSCREENINFO Failed\n");
-			close(info.fd);
-			return -1;
-		}
-
-		/* set pixel format to yuv420 */
-		pixel_fmt_new = CSKY_LCDCON_DFS_YUV420;
-		ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new);
-
-		/* set y/u/v base address */
-		base_yuv.y = base;
-		base_yuv.u = base_yuv.y + info.var.xres * info.var.yres;
-		base_yuv.v = base_yuv.u + info.var.xres * info.var.yres / 4;
-		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		printf("error: open %s failed!\n", path);
+		return -1;
 	}
 
-	/* init lcdc */
-	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
+	if (stat(path, &statbuff) < 0) {
+		printf("error: get stat failed!\n");
+		close(fd);
+		return -1;
+	}
 
-	return 0;
+	size = statbuff.st_size;
+	if (read(fd, ptr, size) != size) {
+		printf("error: read file failed!\n");
+		close(fd);
+		return -1;
+	}
+
+	close(fd);
+	return size;
 }
 
 int test_display_rectangle_32bpp(void)
 {
 	int tmp;
-	enum csky_fb_pixel_format pixel_fmt_new = CSKY_LCDCON_DFS_RGB;
-	enum csky_fb_out_mode out_mode;
+	enum csky_fb_pixel_format pixel_fmt_new;
+	enum csky_fb_out_mode out_mode = info.out_mode;
 	unsigned int width, height, pixel_len;
 	unsigned int i, j;
+
+	/* turn off LCD backlight */
+	write(pwm, pwm_off_state, 1);
 
 	/* reset lcdc */
 	ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
 
-	/* open LCD backlight */
-	write(pwm, pwm_on_state, 1);
-
-	/* set out mode to LCD */
-	out_mode = CSKY_FB_OUT_LCD_MODE;
+	/* set out mode */
 	ioctl(info.fd, CSKY_FBIO_SET_OUT_MODE, &out_mode);
 	/* get var again. var is changed */
 	if (ioctl(info.fd, FBIOGET_VSCREENINFO, &info.var)) {
-		printf("ERROR: FBIOGET_VSCREENINFO Failed\n");
+		printf("error: FBIOGET_VSCREENINFO Failed\n");
 		close(info.fd);
 		return -1;
 	}
+	printf("res: %dx%d\n", info.var.xres, info.var.yres);
 
 	/* set pixel format */
+	pixel_fmt_new = CSKY_FB_PIXEL_FMT_RGB;
 	ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new);
 
 	/* draw rectangle */
 
 	width = info.var.xres;
 	height = info.var.yres;
-	pixel_len = 4; //32bpp
+	pixel_len = 4; /* 32bpp */
 
 	memset(info.ptr, 0, width * height * pixel_len);
+
+	/* draw red rectangle */
 	j = 0;
 	for (i = 0; i < width; i++)
 		*(unsigned int *)((unsigned int)info.ptr +
@@ -207,108 +123,167 @@ int test_display_rectangle_32bpp(void)
 
 	/* init lcdc */
 	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
+
+	/* turn on LCD backlight */
+	if (out_mode == CSKY_FB_OUT_LCD_MODE)
+		write(pwm, pwm_on_state, 1);
+
 	return 0;
 }
 
-int do_fb_test(char *choice)
+int test_display_yuv_image(void)
 {
-	int ret;
+	unsigned long base = info.fix.smem_start;
+	struct csky_fb_lcd_pbase_yuv base_yuv;
+	enum csky_fb_pixel_format pixel_fmt_new;
+	int tmp;
+	int size;
+	enum csky_fb_out_mode out_mode = info.out_mode;
 
-	if (strcasecmp(choice, MENU_EXIT) == 0)
-		ret = EXIT_TEST;
-	else if (strcasecmp(choice, MENU_DISPLAY_YUV_IMG) == 0)
-		ret = test_display_yuv_image(CSKY_FB_OUT_LCD_MODE);
-	else if (strcasecmp(choice, MENU_DISPLAY_HDMI_YUV_IMG) == 0)
-		ret = test_display_yuv_image(CSKY_FB_OUT_HDMI_MODE);
-	else if (strcasecmp(choice, MENU_DISPLAY_RECT_IMG) == 0)
-		ret = test_display_rectangle_32bpp();
-	else {
-		printf("invalid input\n");
-		ret = 0;
+	/* turn off LCD backlight */
+	write(pwm, pwm_off_state, 1);
+
+	/* reset lcdc */
+	ioctl(info.fd, FBIO_WAITFORVSYNC, &tmp);
+	ioctl(info.fd, FBIOBLANK, FB_BLANK_POWERDOWN);
+
+	/* read image data into framebuffer */
+	size = load_file(info.ptr, info.file_name);
+	if (size > 0) {
+		/* set out mode */
+		ioctl(info.fd, CSKY_FBIO_SET_OUT_MODE, &out_mode);
+		/* get var again. var is changed */
+		if (ioctl(info.fd, FBIOGET_VSCREENINFO, &info.var)) {
+			printf("error: FBIOGET_VSCREENINFO Failed\n");
+			close(info.fd);
+			return -1;
+		}
+		printf("res: %dx%d\n", info.var.xres, info.var.yres);
+
+		/* set pixel format to yuv420 */
+		pixel_fmt_new = CSKY_FB_PIXEL_FMT_YUV420;
+		ioctl(info.fd, CSKY_FBIO_SET_PIXEL_FMT, &pixel_fmt_new);
+
+		/* set y/u/v base address */
+		base_yuv.y = base;
+		base_yuv.u = base_yuv.y + info.var.xres * info.var.yres;
+		base_yuv.v = base_yuv.u + info.var.xres * info.var.yres / 4;
+		ioctl(info.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
 	}
 
-	return ret;
+	/* init lcdc */
+	ioctl(info.fd, FBIOBLANK, FB_BLANK_UNBLANK);
+
+	/* turn on LCD backlight */
+	if (out_mode == CSKY_FB_OUT_LCD_MODE)
+		write(pwm, pwm_on_state, 1);
+
+	return 0;
 }
 
-static int load_file(void *ptr, char *path)
+static void print_usage(const char *prog)
 {
-	int fd;
-	struct stat statbuff;
-	unsigned long size;
+	printf("Usage: %s [OPTION]\n", prog);
+	printf(
+"  -d                 framebuffer device name (default /dev/fb0)\n"
+"  -f                 yuv data from a file (e.g. /media/yuv420_1280x720.yuv)\n"
+"  -p --pixel-format  pixel format (rgb or yuv420, default rgb)\n"
+"  --hdmi             display image via HDMI\n");
+}
 
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		printf("error! open %s failed!\n", path);
-		return -1;
+static int parse_args(int argc, char **argv, struct csky_fb_test_info *info)
+{
+	int option_index;
+	int c;
+	const char short_options[] = "d:f:hp:";
+	const struct option long_options[] = {
+		{"help", 0, 0, 'h'},
+		{"pixel-format", 1, 0, 'p'},
+		{"hdmi", 0, 0, OPT_HDMI},
+		{0, 0, 0, 0}
+	};
+
+	/* set the default args */
+	info->device_name = "/dev/fb0";
+	info->out_mode = CSKY_FB_OUT_LCD_MODE;
+	info->pixel_format = CSKY_FB_PIXEL_FMT_RGB;
+
+	while ((c = getopt_long(argc, argv, short_options, long_options,
+				&option_index)) != -1) {
+		switch (c) {
+		case 'h':
+			return -1;
+		case 'd':
+			info->device_name = optarg;
+			break;
+		case 'f':
+			info->file_name = optarg;
+			break;
+		case 'p':
+			if (strcasecmp(optarg, "rgb") == 0)
+				info->pixel_format = CSKY_FB_PIXEL_FMT_RGB;
+			else if (strcasecmp(optarg, "yuv420") == 0)
+				info->pixel_format = CSKY_FB_PIXEL_FMT_YUV420;
+			else {
+				printf("error: Invalid format %s\n", optarg);
+				return -1;
+			}
+			break;
+		case OPT_HDMI:
+			info->out_mode = CSKY_FB_OUT_HDMI_MODE;
+			break;
+		default:
+			return -1;
+		}
 	}
 
-	if (stat(path, &statbuff) < 0) {
-		printf("error! get stat failed!\n");
-		close(fd);
-		return -1;
-	}
-
-	size = statbuff.st_size;
-	/* printf("file size: %d bytes\n", size); */
-
-	if (read(fd, ptr, size) != size) {
-		printf("error! read file failed!\n");
-		close(fd);
-		return -1;
-	}
-	close(fd);
-	return size;
+	return 0;
 }
 
 int main(int argc, char **argv)
 {
-	if (argc < 2) {
-		show_help();
-		return 0;
+	if (parse_args(argc, argv, &info)) {
+		print_usage(argv[0]);
+		return -1;
 	}
 
-	printf("csky_fb_test  %s  %s\n", __DATE__, __TIME__);
+	printf("%s  %s  %s\n", argv[0], __DATE__, __TIME__);
 
-	info.fd = open(argv[1], O_RDWR);
+	info.fd = open(info.device_name, O_RDWR);
 	if (info.fd < 0) {
-		printf("ERROR: Failed to open %s\n", argv[1]);
+		printf("error: Failed to open %s\n", info.device_name);
 		return -1;
 	}
 
 	if (ioctl(info.fd, FBIOGET_VSCREENINFO, &info.var)) {
-		printf("ERROR: FBIOGET_VSCREENINFO Failed\n");
-		close(info.fd);
-		return -1;
-	}
-	if (ioctl(info.fd, FBIOGET_FSCREENINFO, &info.fix)) {
-		printf("ERROR: FBIOGET_FSCREENINFO Failed\n");
+		printf("error: FBIOGET_VSCREENINFO Failed\n");
 		close(info.fd);
 		return -1;
 	}
 
-	printf("fb res %dx%d virtual %dx%d, line_len %d, bpp %d\n",
-	       info.var.xres, info.var.yres,
-	       info.var.xres_virtual, info.var.yres_virtual,
-	       info.fix.line_length, info.var.bits_per_pixel);
+	if (ioctl(info.fd, FBIOGET_FSCREENINFO, &info.fix)) {
+		printf("error: FBIOGET_FSCREENINFO Failed\n");
+		close(info.fd);
+		return -1;
+	}
 
 	info.ptr = mmap(NULL,
 			info.var.yres_virtual * info.fix.line_length,
 			PROT_WRITE | PROT_READ, MAP_SHARED, info.fd, 0);
 	if (info.ptr == MAP_FAILED) {
-		printf("ERROR: mmap Failed\n");
+		printf("error: mmap Failed\n");
 		close(info.fd);
 		return -1;
 	}
+
 	pwm = open("/sys/class/backlight/soc:backlight/brightness", O_RDWR);
 	if (pwm < 0)
-		printf("ERROR: open pwm Failed\n");
+		printf("error: open pwm Failed\n");
 
-	while (1) {
-		show_menu();
-		get_first_str(action);
-		if (do_fb_test(action) == EXIT_TEST)
-			break;
-	}
+	if (info.pixel_format == CSKY_FB_PIXEL_FMT_RGB)
+		test_display_rectangle_32bpp();
+	else if (info.pixel_format == CSKY_FB_PIXEL_FMT_YUV420)
+		test_display_yuv_image();
 
 	close(info.fd);
 	close(pwm);
