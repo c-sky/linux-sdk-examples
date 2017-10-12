@@ -23,7 +23,7 @@ SUBDIR_OBJECTS = $(foreach f, $(SUBDIRS), $(f)/*.o)
 OBJECTS := $(SOURCES:.c=.o)
 EXEC = $(DST_DIR)/csky_ffmpeg_media_player_example
 CFLAGS += -O2
-LFLAGS += -lavcodec -lavutil -lswresample -lasound -lavformat -lavfilter
+LFLAGS += -lavcodec -lavutil -lswresample -lasound -lavformat -lavfilter -pthread
 
 all: $(EXEC)
 
