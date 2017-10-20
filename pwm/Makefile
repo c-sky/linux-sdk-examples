@@ -22,7 +22,7 @@ CC = ${TCPATH}gcc
 SOURCES = lcd_backlight.c
 
 OBJECTS := $(SOURCES:.c=.o)
-EXEC = lcd_backlight
+EXEC = ./bin/csky_lcd_backlight_example
 CFLAGS = -O0 -Wall -g -lm
 
 all: $(EXEC)
