@@ -49,6 +49,7 @@ void print_usage(char *name)
 	printf("\t-V - synchronise to vsync\n");
 	//printf("\t- <device> - \n");
 	printf("\t-r <file> - Record file name (e.g. ./video.yuv)\n");
+	printf("\t-o <file> - set lcd or hdmi mode  (e.g. lcd)\n");
 	printf("\n");
 }
 
@@ -81,7 +82,7 @@ int parse_args(struct instance *i, int argc, char **argv)
 
 	init_to_defaults(i);
 
-	while ((c = getopt(argc, argv, "c:d:i:m:t:Vr:")) != -1) {
+	while ((c = getopt(argc, argv, "c:d:i:m:t:Vr:o:")) != -1) {
 		switch (c) {
 		case 'c':
 			i->parser.codec = get_codec(optarg);
@@ -103,6 +104,9 @@ int parse_args(struct instance *i, int argc, char **argv)
 			break;
 		case 'V':
 			i->fb.double_buf = 1;
+			break;
+		case 'o':
+			i->is_hdmi = (!strcmp("hdmi", optarg)) ? true : false;
 			break;
 		default:
 			err("Bad argument");

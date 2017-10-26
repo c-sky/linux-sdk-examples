@@ -23,6 +23,9 @@
 					enum csky_fb_pixel_format)
 #define CSKY_FBIO_SET_PBASE_YUV	_IOW('F', CSKY_FBIO_BASE+2, \
 					struct csky_fb_lcd_pbase_yuv)
+#define CSKY_FBIO_SET_OUT_MODE	_IOW('F', CSKY_FBIO_BASE+3, \
+						enum csky_fb_out_mode)
+
 
 /*
  * DFS, Data format select(Storage format of YUV is planar mode)
@@ -37,6 +40,11 @@ enum csky_fb_pixel_format {
 	CSKY_FB_PIXEL_FMT_YUV444 = CSKY_LCDCON_DFS_YUV444,
 	CSKY_FB_PIXEL_FMT_YUV422 = CSKY_LCDCON_DFS_YUV422,
 	CSKY_FB_PIXEL_FMT_YUV420 = CSKY_LCDCON_DFS_YUV420,
+};
+
+enum csky_fb_out_mode {
+	CSKY_FB_OUT_LCD_MODE = 0,
+	CSKY_FB_OUT_HDMI_MODE,
 };
 
 struct csky_fb_lcd_pbase_yuv {
