@@ -23,6 +23,7 @@
 #define INCLUDE_COMMON_H
 
 #include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
@@ -98,8 +99,8 @@ struct instance {
 	bool op_read;
 	bool op_write;
 	bool op_erase;
-	unsigned int operate_offset;
-	unsigned int operate_length;
+	int operate_offset;
+	int operate_length;
 	char *file_name;	// e.g. "/tmp/spiflash.hex"
 
 	/* Internal args */
@@ -112,6 +113,9 @@ void init_to_defaults(struct instance *inst);
 
 /* Print usage information of the application */
 void print_usage(char *name);
+
+/* Check if it is numberic string */
+bool is_numberic_str(char *str);
 
 /* Parse the arguments that have been given to the application */
 int parse_args(struct instance *i, int argc, char **argv);

@@ -30,6 +30,8 @@ void init_to_defaults(struct instance *inst)
 	memset(inst, 0, sizeof(*inst));
 	inst->dev_fd = -1;
 	inst->file_fd = -1;
+	inst->operate_offset = -1;
+	inst->operate_length = -1;
 }
 
 int main(int argc, char **argv)

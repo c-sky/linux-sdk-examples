@@ -43,11 +43,24 @@ void print_usage(char *name)
 	printf("\t%s -d /dev/mtd0 -w -f ./flash.bin\n", name);
 	printf("\t%s -d /dev/mtd0 -w -f ./flash.bin -o 512\n", name);
 	printf("\t%s -d /dev/mtd0 -w -f ./flash.bin -o 512 -l 1024\n", name);
-	printf("\t%s -d /dev/mtd0 -e\n", name);
-	printf("\t%s -d /dev/mtd0 -e -o 4096\n", name);
 	printf("\t%s -d /dev/mtd0 -e -o 4096 -l 8192\n", name);
 
 	printf("\n");
+}
+
+bool is_numberic_str(char *str)
+{
+	int i = 0;
+	if (NULL == str) {
+		return false;
+	}
+
+	while (str[i] != '\0') {
+		if (!isdigit(str[i++])) {
+			return false;
+		}
+	}
+	return true;
 }
 
 int parse_args(struct instance *inst, int argc, char **argv)
@@ -73,10 +86,14 @@ int parse_args(struct instance *inst, int argc, char **argv)
 			inst->op_erase = true;
 			break;
 		case 'o':
-			inst->operate_offset = atoi(optarg);
+			if (is_numberic_str(optarg)) {
+				inst->operate_offset = atoi(optarg);
+			}
 			break;
 		case 'l':
-			inst->operate_length = atoi(optarg);
+			if (is_numberic_str(optarg)) {
+				inst->operate_length = atoi(optarg);
+			}
 			break;
 		case 'f':
 			inst->file_name = optarg;
@@ -88,12 +105,22 @@ int parse_args(struct instance *inst, int argc, char **argv)
 	}
 
 	if (inst->dev_name == NULL) {
-		printf("MTD device name is required, e.g. '-d /dev/mtd0'\n");
+		err("MTD device name is required, e.g. '-d /dev/mtd0'\n");
 		return -1;
 	}
 
 	if (inst->op_read && inst->op_write) {
-		err("Can't to read & write in same time");
+		err("Can't to read & write in same time.\n");
+		return -1;
+	}
+
+	if (inst->operate_offset < 0 || inst->operate_length < 0) {
+		err("Offset or Length is required, e.g. '-o 1024 -l 64'\n");
+		return -1;
+	}
+
+	if (NULL == inst->file_name && (inst->op_read || inst->op_write)) {
+		err("File name is required while read or write.\n");
 		return -1;
 	}
 

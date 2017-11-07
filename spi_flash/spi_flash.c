@@ -275,7 +275,7 @@ EXIT:
 	if (pfile != NULL) {
 		munmap(pfile, file_size);
 	}
-	return 0;
+	return ret;
 }
 
 #define ERASE_STEP (4*4*1024)
