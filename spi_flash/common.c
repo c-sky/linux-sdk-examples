@@ -25,6 +25,7 @@
 char g_scan_char;
 
 static struct timeval s_tv;
+static const char *prefix_hex = "0x";
 
 void common_time_start(void)
 {
@@ -61,4 +62,42 @@ void common_dump_hex(char *buf, unsigned int len)
 		}
 	}
 	printf("\n");
+}
+
+bool string_to_num(char *str, unsigned int *value)
+{
+	int i = 0;
+	bool is_hex = false;
+	size_t str_len = strlen(str);
+	int prefix_hex_len = strlen(prefix_hex);
+	if (NULL == str) {
+		return false;
+	}
+
+	if ((str_len > 2) && (strncmp(str, prefix_hex, prefix_hex_len) == 0)) {
+		if (str_len > (sizeof(unsigned int) * 2 + prefix_hex_len)) {
+			return false;
+		}
+		is_hex = true;
+		i += prefix_hex_len;
+	};
+
+	while (str[i] != '\0') {
+		if (is_hex) {
+			if (!isxdigit(str[i++])) {
+				return false;
+			}
+		} else {
+			if (!isdigit(str[i++])) {
+				return false;
+			}
+		}
+	}
+
+	if (is_hex) {
+		sscanf(str, "0x%x", value);
+	} else {
+		*value = atoi(str);
+	}
+	return true;
 }

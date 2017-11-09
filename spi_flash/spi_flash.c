@@ -33,6 +33,9 @@ static const char *str_flash_type[] = {
 	"nand-flash(mlc)"	//MTD_MLCNANDFLASH      8       /* MLC NAND (including TLC) */
 };
 
+static pthread_t foolproof_thread_id;
+static bool is_erase_done = true;
+
 int get_mtdinfo(struct instance *inst)
 {
 	int num;
@@ -78,8 +81,7 @@ int flash_read(struct instance *inst)
 	unsigned int print_buf_len = 0;
 
 	if (inst->operate_length == 0) {
-		printf("Read length should not be 0\n");
-		goto EXIT;
+		inst->operate_length = inst->mtd_info.size - inst->operate_offset;
 	}
 
 	if (inst->operate_offset + inst->operate_length > inst->mtd_info.size) {
@@ -278,11 +280,98 @@ EXIT:
 	return ret;
 }
 
+static void *foolproof_thread(void *args)
+{
+	printf("Erasing Flash, Please wait");
+	fflush(stdout);
+	unsigned char count = 0;
+	while (!is_erase_done) {
+		if (count == 10) {
+			/* printf '.' per one second*/
+			printf(".");
+			fflush(stdout);
+			count = 0;
+		}
+		usleep(100*1000);
+		count++;
+	}
+	pthread_exit(NULL);
+}
+
+static void wait_foolproof_thread(void)
+{
+	int ret;
+	is_erase_done = true;
+	ret = pthread_join(foolproof_thread_id, NULL);
+	if (ret < 0) {
+		err("pthread_join return %d\n", errno);
+	}
+}
+
 #define ERASE_STEP (4*4*1024)
+int flash_erase_op(struct instance *inst, ERASE_OPTION_t erase_option)
+{
+	unsigned int erase_per = 0;
+	erase_info_t erase;
+
+	if (erase_option == ERASE_ALL) {
+		erase.start = inst->operate_offset;
+		erase.length = inst->operate_length;
+
+		is_erase_done = false;
+		if (pthread_create(&foolproof_thread_id, NULL, foolproof_thread, NULL) != 0) {
+			err("Failed to create foolproof thread.\n");
+		}
+		if (ioctl(inst->dev_fd, MEMERASE, &erase) != 0) {
+			err("Erase offset=%d, length=%d failed, errno = %d",
+			    erase.start, erase.length, errno);
+			wait_foolproof_thread();
+			return -1;
+		}
+		wait_foolproof_thread();
+	} else {
+		unsigned int bytes_erase_total = 0;
+		printf("Erase process: 00%%");
+		fflush(stdout);
+		while (bytes_erase_total < inst->operate_length) {
+			unsigned int bytes_erase =
+				min((inst->operate_length - bytes_erase_total), ERASE_STEP);
+
+			erase.start = inst->operate_offset + bytes_erase_total;
+			erase.length = bytes_erase;
+
+			if (ioctl(inst->dev_fd, MEMERASE, &erase) != 0) {
+				err("Erase offset=%d, length=%d failed, errno = %d",
+				    erase.start, erase.length, errno);
+				return -1;
+			}
+
+			unsigned int erase_per_now = 100 * bytes_erase_total / inst->operate_length;
+			if (bytes_erase_total != inst->operate_length &&
+				erase_per_now != erase_per) {
+				printf("\b\b\b%02d%%",
+				       100 * bytes_erase_total / inst->operate_length);
+				fflush(stdout);
+			}
+
+			bytes_erase_total += bytes_erase;
+		}
+	}
+
+	printf("\b\b\b100%%.\n");
+	return 0;
+}
+
 int flash_erase(struct instance *inst)
 {
+	int ret = -1;
+
+	if (inst->operate_length == 0) {
+		inst->operate_length = inst->mtd_info.size - inst->operate_offset;
+	}
+
 	if ((inst->operate_offset + inst->operate_length) > inst->mtd_info.size) {
-		printf("offset(%d)+length(%d) is beyond the chip size(%d).\n",
+		err("offset(%d)+length(%d) is beyond the chip size(%d).\n",
 		       inst->operate_offset, inst->operate_length,
 		       inst->mtd_info.size);
 		return -1;
@@ -290,10 +379,9 @@ int flash_erase(struct instance *inst)
 
 	if ((inst->operate_offset % inst->mtd_info.erasesize) != 0 ||
 	    (inst->operate_length % inst->mtd_info.erasesize) != 0) {
-		printf
-		    ("offset(%d) and length(%d) should aligned with erase_size(%d)",
-		     inst->operate_offset, inst->operate_length,
-		     inst->mtd_info.erasesize);
+		err("offset(%d) and length(%d) should aligned with erase_size(%d)",
+		 inst->operate_offset, inst->operate_length,
+		 inst->mtd_info.erasesize);
 		return -1;
 	}
 
@@ -305,40 +393,16 @@ int flash_erase(struct instance *inst)
 		return -1;
 	}
 
-	unsigned int bytes_erase_total = 0;
-	unsigned int elapsed_usec_total = 0;
-	erase_info_t erase;
-
-	printf("Erase process: 00%%");
-	fflush(stdout);
-	while (bytes_erase_total < inst->operate_length) {
-		unsigned int bytes_erase =
-		    min((inst->operate_length - bytes_erase_total), ERASE_STEP);
-
-		erase.start = inst->operate_offset + bytes_erase_total;
-		erase.length = bytes_erase;
-
-		unsigned int elapsed_usec;
-		common_time_start();
-		if (ioctl(inst->dev_fd, MEMERASE, &erase) != 0) {
-			err("Erase offset=%d, length=%d failed, errno = %d",
-			    erase.start, erase.length, errno);
-			return -1;
-		}
-		common_time_elapse(NULL, &elapsed_usec);
-
-		if (bytes_erase_total != inst->operate_length) {
-			printf("\b\b\b%02d%%",
-			       100 * bytes_erase_total / inst->operate_length);
-			fflush(stdout);
-		}
-
-		elapsed_usec_total += elapsed_usec;
-		bytes_erase_total += bytes_erase;
+	unsigned int elapsed_usec = 0;
+	common_time_start();
+	if (inst->operate_offset == 0 &&
+	    inst->operate_length == inst->mtd_info.size) {
+		ret = flash_erase_op(inst, ERASE_ALL);
+	} else {
+		ret = flash_erase_op(inst, ERASE_STEP_BY_STEP);
 	}
-	printf("\b\b\b100%%.\n");
+	common_time_elapse(NULL, &elapsed_usec);
 	printf("  <<%8u usec costed for 'Erase %u bytes'>>\n",
-	       elapsed_usec_total, inst->operate_length);
-
-	return 0;
+	       elapsed_usec, inst->operate_length);
+	return ret;
 }

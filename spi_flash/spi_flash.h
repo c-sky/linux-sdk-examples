@@ -24,11 +24,17 @@
 #ifndef SPI_FLASH_H
 #define SPI_FLASH_H
 
+typedef enum {
+	ERASE_STEP_BY_STEP,
+	ERASE_ALL
+} ERASE_OPTION_t;
+
 int get_mtdinfo(struct instance *inst);
 int print_mtdinfo(struct instance *inst);
 
 int flash_read(struct instance *inst);
 int flash_write(struct instance *inst);
+int flash_erase_op(struct instance *inst, ERASE_OPTION_t erase_option);
 int flash_erase(struct instance *inst);
 
 #endif /* SPI_FLASH_H */

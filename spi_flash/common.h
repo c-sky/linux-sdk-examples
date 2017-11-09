@@ -99,8 +99,8 @@ struct instance {
 	bool op_read;
 	bool op_write;
 	bool op_erase;
-	int operate_offset;
-	int operate_length;
+	unsigned int operate_offset;
+	unsigned int operate_length;
 	char *file_name;	// e.g. "/tmp/spiflash.hex"
 
 	/* Internal args */
@@ -114,8 +114,8 @@ void init_to_defaults(struct instance *inst);
 /* Print usage information of the application */
 void print_usage(char *name);
 
-/* Check if it is numberic string */
-bool is_numberic_str(char *str);
+/* revert string to number */
+bool string_to_num(char *str, unsigned int *value);
 
 /* Parse the arguments that have been given to the application */
 int parse_args(struct instance *i, int argc, char **argv);
