@@ -31,7 +31,7 @@
 #include "common.h"
 #include "fb.h"
 
-//#define TEST_LCDC_RESET
+#define TEST_LCDC_RESET
 
 static enum csky_fb_pixel_format s_pixel_fmt;
 static const char *pwm_on_state = "7";
