@@ -383,6 +383,11 @@ void video_deinit(struct instance *inst)
 	cleanup(inst);
 }
 
+void video_cleanup(struct instance *inst)
+{
+	cleanup(inst);
+}
+
 int video_init(struct instance *inst)
 {
 	int n;

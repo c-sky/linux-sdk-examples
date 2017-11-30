@@ -73,12 +73,19 @@ int main(int argc, char *argv[])
 	}
 
 	if (ps->videoStream != -1) {
-		prepare_video(ps);
-		inst.ps = ps;
+		if (prepare_video(ps) == 0) {
+		/* prepare video ok , ready to open fb...*/
+			inst.ps = ps;
 
-		if (video_init(&inst) != 0) {
-			LOG_E("video init failed");
-			exit(-1);
+			if (video_init(&inst) != 0) {
+				LOG_E("video init failed");
+				exit(-1);
+			}
+		}
+		else {
+		/* prepare video failed*/
+			ps->videoStream = -1;
+			video_cleanup(&inst);
 		}
 	}
 
