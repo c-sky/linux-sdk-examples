@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	rtcfd = open(argv[2], O_RDWR);
+	rtcfd = open(argv[1], O_RDWR);
 
 	if (rtcfd < 0) {
 		printf("RTC open failed\n");
@@ -34,10 +34,10 @@ int main(int argc, char *argv[])
 
 	struct rtc_time time;
 
-	if (strcmp(argv[1], "read") == 0 && argc >= 3)
+	if (strcmp(argv[2], "read") == 0 && argc >= 3)
 		read_rtc(rtcfd, &time);
 
-	else if (strcmp(argv[1], "write") == 0 && argc >= 4) {
+	else if (strcmp(argv[2], "write") == 0 && argc >= 4) {
 		if (check_datetime(argv[3], &time) == 0)
 			write_rtc(rtcfd, time);
 		else {
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	else if (strcmp(argv[1], "alarm") == 0 && argc >= 4) {
+	else if (strcmp(argv[2], "alarm") == 0 && argc >= 4) {
 		if (check_datetime(argv[3], &time) == 0)
 			alarm_rtc(rtcfd, time);
 		else {

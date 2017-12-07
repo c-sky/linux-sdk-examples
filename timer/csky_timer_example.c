@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
 
 	printf("All the timers should timeout\n");
 
+	sleep(2);
 	/* Delete timer */
 	for (i = 0; i < timercount; i++) {
 		ret = timer_delete(timer[i]);
