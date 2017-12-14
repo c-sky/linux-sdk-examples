@@ -24,6 +24,7 @@ SUBDIRS := 	watchdog \
 		network \
 		rtc \
 		v4l2_decode \
+		v4l2_encode \
 		uart
 
 ifeq ($(BR2_PACKAGE_LIBSNDFILE),y)
