@@ -17,7 +17,6 @@
  * Included Files
  ****************************************************************************/
 
-#include <sys/socket.h>
 #include <netinet/in.h>
 
 #include <stdio.h>
@@ -32,6 +31,8 @@
 
 #include <arpa/inet.h>
 #include <sys/select.h>
+#include <sys/socket.h>
+#include <linux/route.h>
 
 /**************************************************************************
  * Macro Defination 
@@ -47,11 +48,10 @@
  ****************************************************************************/
 int set_ip_addr(int fd, struct ifreq *req, const char *ipaddr);
 int set_netmask_addr(int fd, struct ifreq *req, const char *ipaddr);
-int set_dst_addr(int fd, struct ifreq *req, const char *ipaddr);
 int get_ip_addr(int fd, struct ifreq *req, char *addr);
 int get_netmask_addr(int fd, struct ifreq *req, char *addr);
-int get_dst_addr(int fd, struct ifreq *req, char *addr);
+int set_gw_addr(int fd, const char *ipaddr);
 
-void sendtcp_client(unsigned long host);
-void recvtcp_server(void);
+void sendtcp_client(unsigned long host, int port);
+void recvtcp_server(int port);
 void ping_dst(unsigned long host);

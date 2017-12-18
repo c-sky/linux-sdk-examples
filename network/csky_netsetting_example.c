@@ -26,14 +26,11 @@ int main(int argc, char **argv)
 
 	char *netdev;
 	int sock, ret;
-	char *ip_addr, *netmask_addr, *dst_addr;
+	char *ip_addr, *netmask_addr, *gw_addr;
 
 	netdev = argv[1];
 
 	/* Initialization */
-	ip_addr = (char *)malloc(14);
-	netmask_addr = (char *)malloc(14);
-	dst_addr = (char *)malloc(14);
 
 	struct ifreq req;
 
@@ -43,21 +40,26 @@ int main(int argc, char **argv)
 	strncpy(req.ifr_name, netdev, IFNAMSIZ);
 	/* Do get information actions */
 	if (argc == 2) {
-
+		ip_addr = (char *)malloc(15);
+		memset(ip_addr, 0, 15);
 		ret = get_ip_addr(sock, &req, ip_addr);
-		if (ret < 0)
+		if (ret < 0) {
+			free(ip_addr);
 			goto EXIT;
+		}
+
 		printf("IP Address: %s\n", ip_addr);
 
+		netmask_addr = (char *)malloc(15);
+		memset(netmask_addr, 0, 15);
 		ret = get_netmask_addr(sock, &req, netmask_addr);
-		if (ret < 0)
+		if (ret < 0) {
+			free(netmask_addr);
 			goto EXIT;
+		}
 		printf("Netmask: %s\n", netmask_addr);
-
-		ret = get_dst_addr(sock, &req, dst_addr);
-		if (ret < 0)
-			goto EXIT;
-		printf("Gateway IP: %s\n", dst_addr);
+		free(ip_addr);
+		free(netmask_addr);
 
 	}
 
@@ -85,8 +87,8 @@ int main(int argc, char **argv)
 
 	/* Do set gateway ip address action */
 	if (argc >= 5) {
-		dst_addr = argv[4];
-		ret = set_dst_addr(sock, &req, dst_addr);
+		gw_addr = argv[4];
+		ret = set_gw_addr(sock, gw_addr);
 		if (ret < 0) {
 			printf("Fail to set Gateway IP.\n");
 			goto EXIT;
@@ -95,9 +97,6 @@ int main(int argc, char **argv)
 	}
 
 EXIT:
-	free(ip_addr);
-	free(netmask_addr);
-	free(dst_addr);
 	close(sock);
 	return ret;
 }
@@ -111,8 +110,10 @@ static int32_t check_ip(const char *ipaddr)
 {
 	int32_t host;
 	host = inet_addr(ipaddr);
-	if (host < 0)
+	if (host < 0) {
 		printf("Invalid IP address given.\n");
+		exit(-1);
+	}
 	return host;
 }
 
@@ -168,17 +169,29 @@ int set_netmask_addr(int fd, struct ifreq *req, const char *ipaddr)
   \return 0: success, others: error
   */
 
-int set_dst_addr(int fd, struct ifreq *req, const char *ipaddr)
+int set_gw_addr(int fd,  const char *ipaddr)
 {
-	struct sockaddr_in *sockaddr;
+	struct sockaddr_in sockaddr;
 	int ret;
-	sockaddr = (struct sockaddr_in *)&req->ifr_dstaddr;
-	sockaddr->sin_port = 0;
-	sockaddr->sin_family = AF_INET;
-	sockaddr->sin_addr.s_addr = check_ip(ipaddr);
-	memset(&sockaddr->sin_zero, 0, 8);
+	struct rtentry gw;
 
-	ret = ioctl(fd, SIOCSIFDSTADDR, req);
+	memset(&gw, 0, sizeof(gw));
+	sockaddr.sin_family = AF_INET;
+	sockaddr.sin_addr.s_addr = check_ip(ipaddr);
+	sockaddr.sin_port = 0;
+
+	((struct sockaddr_in *)&gw.rt_dst)->sin_family = AF_INET;
+	((struct sockaddr_in *)&gw.rt_dst)->sin_addr.s_addr = 0;
+	((struct sockaddr_in *)&gw.rt_dst)->sin_port = 0;
+
+	((struct sockaddr_in *)&gw.rt_genmask)->sin_family = AF_INET;
+	((struct sockaddr_in *)&gw.rt_genmask)->sin_addr.s_addr = 0;
+	((struct sockaddr_in *)&gw.rt_genmask)->sin_port = 0;
+
+	memcpy((void *)&gw.rt_gateway, &sockaddr, sizeof(sockaddr));
+	gw.rt_flags = RTF_UP | RTF_GATEWAY;
+
+	ret = ioctl(fd, SIOCADDRT, &gw);
 	return ret;
 }
 
@@ -214,24 +227,6 @@ int get_netmask_addr(int fd, struct ifreq *req, char *addr)
 	int ret;
 	sockaddr = (struct sockaddr_in *)&req->ifr_netmask;
 	ret = ioctl(fd, SIOCGIFNETMASK, req);
-	strncpy(addr, inet_ntoa(sockaddr->sin_addr), IPADDRLEN);
-	return ret;
-}
-
-/**
-  \brief         Get GatewayIP address
-  \param[in]   fd       socket file descriptor
-  \param[out]   req      pointer to request that will be got
-  \param[out]  addr     It will store the Gateway IP address
-  \return 0: success, others: error
-  */
-
-int get_dst_addr(int fd, struct ifreq *req, char *addr)
-{
-	struct sockaddr_in *sockaddr;
-	int ret;
-	sockaddr = (struct sockaddr_in *)&req->ifr_netmask;
-	ret = ioctl(fd, SIOCGIFDSTADDR, req);
 	strncpy(addr, inet_ntoa(sockaddr->sin_addr), IPADDRLEN);
 	return ret;
 }

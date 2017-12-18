@@ -21,7 +21,7 @@ static const char *prog_name = "csky_nettrans_example\0";
   \brief       Send tcp packet to the TCP Receiving server
   \param[in]   host   TCP Receiving server host
   */
-void sendtcp_client(unsigned long host)
+void sendtcp_client(unsigned long host, int port)
 {
 	struct sockaddr_in myaddr;
 	char *outbuf;
@@ -49,7 +49,7 @@ void sendtcp_client(unsigned long host)
 	/* Connect the socket to the server */
 
 	myaddr.sin_family = AF_INET;
-	myaddr.sin_port = htons(PORTNO);
+	myaddr.sin_port = htons(port);
 
 	myaddr.sin_addr.s_addr = host;
 
@@ -97,7 +97,7 @@ EXIT:
   \brief     To build a TCP Receiving server
   */
 
-void recvtcp_server(void)
+void recvtcp_server(int port)
 {
 	struct sockaddr_in myaddr;
 	int listensd, acceptsd;
@@ -127,7 +127,7 @@ void recvtcp_server(void)
 	/* Bind the socket to a local address */
 
 	myaddr.sin_family = AF_INET;
-	myaddr.sin_port = htons(PORTNO);
+	myaddr.sin_port = htons(port);
 	myaddr.sin_addr.s_addr = INADDR_ANY;
 	addrlen = sizeof(struct sockaddr_in);
 	if (bind(listensd, (struct sockaddr *)&myaddr, addrlen) < 0) {
@@ -144,7 +144,7 @@ void recvtcp_server(void)
 
 	/* Accept only one connection */
 
-	printf("server: Accepting connections on port %d\n", PORTNO);
+	printf("server: Accepting connections on port %d\n", port);
 	acceptsd = accept(listensd, (struct sockaddr *)&myaddr, &addrlen);
 	if (acceptsd < 0) {
 		printf("server: accept failure: %d\n", errno);
@@ -172,76 +172,9 @@ EXIT:
 	close(listensd);
 }
 
-/**
-  \brief        Do a ping test to the  given host 
-  \param[in]   host   Destination Host 
-  */
-
-void ping_dst(unsigned long host)
-{
-	struct icmphdr icmp_hdr;
-	struct sockaddr_in addr;
-	int sequence = 0;
-	unsigned char data[SENDSIZE];
-	struct timeval timeout = { 3, 0 };
-	fd_set read_set;
-	socklen_t slen;
-	struct icmphdr rcv_hdr;
-
-	/* Create a icmp protocol socket */
-	int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
-	if (sock < 0) {
-		perror("socket");
-		return;
-	}
-
-	/* Initialization */
-	memset(&addr, 0, sizeof(struct sockaddr_in));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = host;
-	memset(&icmp_hdr, 0, sizeof(struct icmphdr));
-	icmp_hdr.type = ICMP_ECHO;
-	icmp_hdr.un.echo.id = 1234;
-
-	/* Ping destination forever */
-	while (1) {
-
-		icmp_hdr.un.echo.sequence = sequence++;
-		memcpy(data, &icmp_hdr, sizeof(struct icmphdr));
-		memcpy(data + sizeof icmp_hdr, "hello", 5);
-		if (sendto(sock, data, sizeof(struct icmphdr) + 5,
-			   0, (struct sockaddr *)&addr,
-			   sizeof(struct sockaddr_in)) <= 0) {
-			perror("Send ping");
-			break;
-		}
-
-		/* Try to check if there is a ping response */
-		memset(&read_set, 0, sizeof(fd_set));
-		FD_SET(sock, &read_set);
-
-		if (select(sock + 1, &read_set, NULL, NULL, &timeout) <= 0) {
-			printf("Cannot receivce ping response.\n");
-			break;
-		}
-
-		/* Receive ping response */
-		slen = 0;
-		if (recvfrom(sock, data, SENDSIZE, 0, NULL, &slen) <= 0) {
-			perror("ping reply");
-			break;
-		}
-		memcpy(&rcv_hdr, data, sizeof(struct icmphdr));
-		if (rcv_hdr.type == ICMP_ECHOREPLY)
-			printf("ICMP Reply Got from %s\n",
-			       inet_ntoa(addr.sin_addr));
-
-	}
-}
-
 int main(int argc, char *argv[])
 {
-	int32_t host;
+	int32_t host,port;
 	if (argc < 2) {
 		help_info();
 		return -1;
@@ -249,23 +182,29 @@ int main(int argc, char *argv[])
 
 	if (argc >= 3) {
 		host = inet_addr(argv[2]);
-		if (host < 0) {
+		if (host <0 ) {
 			printf("Invalid IP address given!\n");
 			return -1;
 		}
 	}
 
+	if (argc >= 4) {
+		port = atoi(argv[3]);
+		if(port <=0 || port > 65534 ) {
+			printf("Invalid Port number given!\n");
+			return -1;
+		}
+	} else {
+		port = PORTNO;
+	}
 	/* Send TCP Packet */
 	if (strcmp(argv[1], "sendtcp") == 0 && argc >= 3)
-		sendtcp_client(host);
+		sendtcp_client(host, port);
 
 	/* Receive TCP Packet */
 	else if (strcmp(argv[1], "tcpserver") == 0)
-		recvtcp_server();
+		recvtcp_server(port);
 
-	/* Ping Test */
-	else if (strcmp(argv[1], "ping") == 0 && argc >= 3)
-		ping_dst(host);
 	else {
 		help_info();
 		return -1;
@@ -278,10 +217,8 @@ static void help_info(void)
 {
 	printf("%s %d.%d\n", prog_name, CSKY_NETWORK_MAJOR_NUM,
 	       CSKY_NETWORK_MINOR_NUM);
-	printf("Usage: %s sendtcp/tcpserver/ping [ipaddr] \n", prog_name);
-	printf
-	    ("If you want to send a ping test , you can type \" %s ping someip \"\n",
-	     prog_name);
+	printf("Usage: %s sendtcp/tcpserver [ipaddr] [portno]\n", prog_name);
+	printf("Default port is %d\n", PORTNO);
 	printf("If you want test tcp packet tranferring, you can \
 type \" %s tcpserver \" to build a tcp receiving server\nor you can\
 type \" %s sendtcp someip\" to send tcp packet\n", prog_name, prog_name);
