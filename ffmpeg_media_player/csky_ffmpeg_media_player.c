@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
 		else {
 		/* prepare video failed*/
 			ps->videoStream = -1;
-			video_cleanup(&inst);
 		}
 	}
 

@@ -27,7 +27,6 @@
 
 int video_init(struct instance *inst);
 void video_deinit(struct instance *inst);
-void video_cleanup(struct instance *inst);
 int prepare_video(PlayerState * ps);
 int get_one_avpacket(PlayerState * ps, AVPacket * packet);
 

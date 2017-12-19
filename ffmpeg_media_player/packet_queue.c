@@ -78,7 +78,7 @@ int packet_queue_get(PacketQueue * queue, AVPacket * pkt, int block)
 	int ret = 0;
 
 	pthread_mutex_lock(&queue->mutex);
-
+	av_packet_unref(pkt);
 	while (1) {
 		pkt_list = queue->firstPkt;
 		if (pkt_list != NULL) {

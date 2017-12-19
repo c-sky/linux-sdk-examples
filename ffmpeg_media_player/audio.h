@@ -25,6 +25,6 @@ void *play_audio(void *ps_arg);
 
 void audio_callback(void *userdata, uint8_t * stream, int len);
 
-int audio_decode_frame(PlayerState * ps);
+int audio_decode_frame(PlayerState * ps, AVPacket *pkt, AVFrame *pframe);
 
 #endif

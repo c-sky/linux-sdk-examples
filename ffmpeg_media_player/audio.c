@@ -222,7 +222,15 @@ void *play_audio(void *ps_arg)
 {
 	PlayerState *ps = (PlayerState *) ps_arg;
 
-	prepare_audio(ps);
+	if (prepare_audio(ps) < 0) {
+		LOG_E("Failed to prepare audio!!!!!");
+		if (ps->paudioCodecCtx)
+			avcodec_free_context(&ps->paudioCodecCtx);
+		pthread_exit(NULL);
+	}
+
+	AVPacket *pkt = av_packet_alloc();
+	AVFrame *pframe = av_frame_alloc();
 
 	while (1) {
 		if (ps->audioPacketQueue.nbPkts == 0) {
@@ -232,13 +240,20 @@ void *play_audio(void *ps_arg)
 			continue;
 		}
 
-		audio_decode_frame(ps);
+		if (audio_decode_frame(ps, pkt, pframe) == -2) {
+			LOG_E("Failed to decode audio frame!!!!!");
+			break;
+		}
+		av_packet_unref(pkt);
+		av_frame_unref(pframe);
 	}
 
 	snd_pcm_drain(pcm);
 	snd_pcm_close(pcm);
 
 	avcodec_free_context(&ps->paudioCodecCtx);
+	av_packet_free(&pkt);
+	av_frame_free(&pframe);
 	swr_free(&swr_ctx);
 
 	pthread_exit(NULL);
@@ -289,41 +304,34 @@ static void init_swr_ctx(AVFrame * frame)
 }
 
 // one packet may contain several frame
-int audio_decode_frame(PlayerState * ps)
+int audio_decode_frame(PlayerState * ps, AVPacket *pkt, AVFrame *pframe)
 {
 	LOG_D("decode_audio~~~");
-
 	uint8_t *audio_buf = ps->audio_buf;
-	AVPacket pkt;
-	AVFrame *pframe;
 	int ret = 0;
 
-	pframe = av_frame_alloc();
-	if (pframe == NULL) {
-		LOG_E("Could not allocate audio frame!");
-		exit(1);
-	}
-
-	if (ps->quit == 1)
+	if (ps->quit == 1) {
+		LOG_I("ps->quit is 1");
 		return -1;
+	}
 
 	if (ps->audioPacketQueue.nbPkts == 0) {
 		LOG_I("ps->audioPacketQueue.nbPktsi is 0");
 		return -1;
 	}
 
-	if (packet_queue_get(&ps->audioPacketQueue, &pkt, 1) < 0) {
+	if (packet_queue_get(&ps->audioPacketQueue, pkt, 1) < 0) {
 		LOG_E("Get queue packet error");
 		return -1;
 	}
 
-	if (pkt.stream_index != ps->audioStream) {
+	if (pkt->stream_index != ps->audioStream) {
 		LOG_E("packet stream %d is not audio stream!",
-		      pkt.stream_index);
+		      pkt->stream_index);
 		return -1;
 	}
 	//decode audio packet, receive a decoded frame
-	ret = avcodec_send_packet(ps->paudioCodecCtx, &pkt);
+	ret = avcodec_send_packet(ps->paudioCodecCtx, pkt);
 	if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF) {
 		LOG_E("send decode packet error");
 		return -1;
@@ -333,10 +341,10 @@ int audio_decode_frame(PlayerState * ps)
 		ret = avcodec_receive_frame(ps->paudioCodecCtx, pframe);
 
 		if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-			return 0;
+			break;
 		} else if (ret < 0) {
 			LOG_E("Error during decoding");
-			exit(1);
+			return -2;
 		}
 
 		init_swr_ctx(pframe);
@@ -351,7 +359,6 @@ int audio_decode_frame(PlayerState * ps)
 
 		if ((ret =
 		     snd_pcm_writei(pcm, audio_buf, pframe->nb_samples)) < 0) {
-
 			//ALSA lib pcm.c:7843:(snd_pcm_recover) underrun occurred
 			if ((ret = snd_pcm_recover(pcm, ret, 0)) < 0) {
 				LOG_E("snd_pcm_writei failed, ret=%d", ret);
@@ -359,9 +366,6 @@ int audio_decode_frame(PlayerState * ps)
 			}
 		}
 	}
-
-	av_packet_unref(&pkt);
-	av_frame_free(&pframe);
 
 	return ret;
 }
