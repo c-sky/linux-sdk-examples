@@ -112,6 +112,6 @@ int feed_watchdog(int fd, int mode)
 	if (mode == 0)
 		ret = ioctl(fd, WDIOC_KEEPALIVE, 0);
 	else
-		ret = write(fd, '\0', 1);
+		ret = write(fd, "0", 1);
 	return ret;
 }
