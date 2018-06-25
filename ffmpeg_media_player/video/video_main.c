@@ -276,8 +276,8 @@ void *mfc_thread_func(void *args)
 		/* Display this cap buf on LCD */
 		struct csky_fb_lcd_pbase_yuv base_yuv;
 		base_yuv.y = disp_paddr;
-		base_yuv.u = base_yuv.y + 1920 * 1088;
-		base_yuv.v = base_yuv.u + 1920 * 1088 / 4;
+		base_yuv.u = base_yuv.y + i->mfc.cap_w * i->mfc.cap_h;
+		base_yuv.v = base_yuv.u + (i->mfc.cap_w * i->mfc.cap_h) / 4;
 		ioctl(i->fb.fd, CSKY_FBIO_SET_PBASE_YUV, &base_yuv);
 		fb_power_on(i);
 		fb_wait_for_vsync(i);

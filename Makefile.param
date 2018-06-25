@@ -15,10 +15,15 @@
 ##
 
 MK_BASE_PATH := $(shell pwd)
-MK_TOOLCHAIN_PREFIX := csky-abiv2-linux-
-CC := $(MK_TOOLCHAIN_PREFIX)gcc
-CXX := $(MK_TOOLCHAIN_PREFIX)g++
-AR := $(MK_TOOLCHAIN_PREFIX)ar
+
+# MK_LOCAL_TOOLCHAIN_PREFIX is local toolchain while not built in buildroot.
+# When use it, should add csky-linux-xx toolchain path into $PATH.
+MK_LOCAL_TOOLCHAIN_PREFIX := csky-linux-
+
+CC := $(MK_LOCAL_TOOLCHAIN_PREFIX)gcc
+CXX := $(MK_LOCAL_TOOLCHAIN_PREFIX)g++
+AR := $(MK_LOCAL_TOOLCHAIN_PREFIX)ar
+
 CFLAGS := -Wall -g
 IFLAGS := -I../include
 DST_DIR := bin
